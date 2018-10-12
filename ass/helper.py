@@ -36,6 +36,12 @@ class Message:
         self.header = header
         self.payload = payload
 
+    def __lt__(self, other):
+        return self.header.seqNum < other.header.seqNum
+
+    def __eq__(self, other):
+        return self.header.seqNum == other.header.seqNum
+
     def encode(self):
         if self.payload:
             return self.header.encode() + self.payload

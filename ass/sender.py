@@ -17,6 +17,8 @@ class Sender:
         self.state = State.INACTIVE
         self.seqNum = 0
 
+        self.payloads = self._prepareFile()
+
     def handshake(self): # three-way handshake (SYN, SYN+ACK, ACK)
         # Set up socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -26,26 +28,56 @@ class Sender:
         while True:
             if self.state == State.INACTIVE:
                 header = Header(self.seqNum, 0, 0, 0, 0, 0, 0, 1, 0) # SYN
-                self.send(header=header)
+                self._send(header=header)
                 self.seqNum += 1
                 self.state = State.HANDSHAKE
+                print('SYN sent')
             elif self.state == State.HANDSHAKE:
-                received = self.socket.recv(4096)
+                received = self._receive()
                 receivedHeader = decode(received).header
                 if receivedHeader.syn and receivedHeader.ack:
+                    print('SYN+ACK received')
                     self.state = State.CONNECTED
             elif self.state == State.CONNECTED:
                 header = Header(self.seqNum, 0, 0, 0, 0, 0, 1, 0, 0) # ACK
-                self.send(header=header)
+                print('ACK sent')
+                self._send(header=header)
                 self.seqNum += 1
-                received = self.socket.recv(4096)
+                received = self._receive()
                 break
 
-    def send(self, header=None, payload=None):
+    def sendFile(self):
+        print('Sending file...')
+        for payload in self.payloads:
+            header = Header(self.seqNum, 0, len(payload))
+            self._send(header, payload)
+            try:
+                response = decode(self._receive())
+                print('Received response. ACK num: {}'.format(response.header.ackNum))
+                responseHeader = response.header
+                if responseHeader.ackNum == self.seqNum:
+                    print('ACK for {} received'.format(self.seqNum))
+            except socket.timeout:
+                print('Timed out!')
+
+    def teardown(self):
+        print('Teardown...')
+            
+    def _prepareFile(self):
+        print('Reading {filename}'.format(filename=self.filename))
+        with open(self.filename, mode='rb') as f:
+            content = f.read()
+
+        return [content[self.mss * i:self.mss * (i + 1)] for i in range(0, int(len(content) / self.mss + 1))]
+
+    def _send(self, header=None, payload=None):
         if payload:
             self.seqNum = header.seqNum + len(payload)
         message = Message(header, payload)
         self.socket.send(message.encode())
+
+    def _receive(self):
+        return self.socket.recv(4096)
 
 if __name__ == '__main__':
     if len(sys.argv) != 7 and len(sys.argv) != 15:
@@ -72,3 +104,5 @@ if __name__ == '__main__':
     
     sender = Sender(receiverHost, receiverPort, filename, mws, mss, gamma)
     sender.handshake()
+    sender.sendFile()
+    sender.teardown()
