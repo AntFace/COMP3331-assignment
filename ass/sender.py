@@ -44,7 +44,8 @@ class Sender:
                 self._send(header=header)
                 self.seqNum += 1
                 received = self._receive()
-                break
+                
+                return
 
     def sendFile(self):
         print('Sending file...')
@@ -59,6 +60,8 @@ class Sender:
                     print('ACK for {} received'.format(self.seqNum))
             except socket.timeout:
                 print('Timed out!')
+
+        return
 
     def teardown(self):
         print('Teardown...')
