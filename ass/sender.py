@@ -19,12 +19,12 @@ class Sender:
 
         self.payloads = self._prepareFile()
 
-    def handshake(self): # three-way handshake (SYN, SYN+ACK, ACK)
         # Set up socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.connect((self.receiverHost, self.receiverPort))
         self.socket.settimeout(1) # Set timeout to 1 for now
 
+    def handshake(self): # three-way handshake (SYN, SYN+ACK, ACK)
         while True:
             if self.state == State.CLOSED:
                 header = Header(seqNum=self.seqNum, syn=True) # SYN
