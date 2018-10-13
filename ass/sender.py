@@ -27,7 +27,7 @@ class Sender:
 
         while True:
             if self.state == State.INACTIVE:
-                header = Header(self.seqNum, 0, 0, 0, 0, 0, 0, 1, 0) # SYN
+                header = Header(seqNum=self.seqNum, syn=True) # SYN
                 self._send(header=header)
                 self.seqNum += 1
                 self.state = State.HANDSHAKE
@@ -39,7 +39,7 @@ class Sender:
                     print('SYN+ACK received')
                     self.state = State.CONNECTED
             elif self.state == State.CONNECTED:
-                header = Header(self.seqNum, 0, 0, 0, 0, 0, 1, 0, 0) # ACK
+                header = Header(seqNum=self.seqNum, ack=True) # ACK
                 print('ACK sent')
                 self._send(header=header)
                 self.seqNum += 1
@@ -49,7 +49,7 @@ class Sender:
     def sendFile(self):
         print('Sending file...')
         for payload in self.payloads:
-            header = Header(self.seqNum, 0, len(payload))
+            header = Header(seqNum=self.seqNum, payloadLength=len(payload))
             self._send(header, payload)
             try:
                 response = decode(self._receive())

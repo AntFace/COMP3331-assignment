@@ -19,7 +19,7 @@ class Receiver:
 
     def send(self, address, header=None, payload=None):
         if payload:
-            header = Header(0, self.ackNum)
+            header = Header(ackNum=self.ackNum)
             message = Message(header, payload)
         else:
             message = Message(header=header)
@@ -54,21 +54,21 @@ if __name__ == '__main__':
             header = decode(message).header
             if header.syn:
                 receiver.ackNum = header.seqNum + 1
-                responseHeader = Header(0, receiver.ackNum, 0, 0, 0, 0, 1, 1, 0) # SYN+ACK
+                responseHeader = Header(ackNum=receiver.ackNum, ack=True, syn=True) # SYN+ACK
                 print('Sent SYN+ACK')
             elif header.ack:
                 receiver.ackNum = header.seqNum + 1
-                responseHeader = Header(0, receiver.ackNum)
+                responseHeader = Header(ackNum=receiver.ackNum)
                 print('Connection established')
             else:
                 message = decode(message)
                 print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=receiver.ackNum))
                 if message.header.seqNum == receiver.ackNum:
                     receiver.write(message.payload)
-                    responseHeader = Header(0, receiver.ackNum, 0, 0, 0, 0, 1, 0, 0)
+                    responseHeader = Header(ackNum=receiver.ackNum, ack=True)
                 elif message.header.seqNum > receiver.ackNum:
                     receiver.addToBuffer(message)
-                    responseHeader = Header(0, receiver.ackNum, 0, 0, 0, 0, 1, 0, 0)
+                    responseHeader = Header(ackNum=receiver.ackNum, ack=True)
   
             receiver.send(address=address, header=responseHeader)
 

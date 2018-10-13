@@ -7,7 +7,7 @@ class State(Enum):
     CONNECTED = 2
 
 class Header:
-    def __init__(self, seqNum=0, ackNum=0, payloadLength=0, checksum=0, mws=0, mss=0, ack=0, syn=0, fin=0):
+    def __init__(self, seqNum=0, ackNum=0, payloadLength=0, checksum=0, mws=0, mss=0, ack=False, syn=False, fin=False):
         self.seqNum = seqNum
         self.ackNum = ackNum
         self.payloadLength = payloadLength
