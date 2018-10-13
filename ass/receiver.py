@@ -16,6 +16,7 @@ class Receiver:
         self.socket.bind(('localhost', self.receiverPort))
 
     def listen(self):
+        print('Listening for connection...')
         self.state = State.LISTEN
         while True:
             message, address = receiver.receive()
@@ -45,8 +46,26 @@ class Receiver:
             elif header.seqNum > self.ackNum:
                 self.addToBuffer(message)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
+            elif header.fin:
+                self.teardown()
 
             receiver.send(address=address, header=responseHeader)
+
+    def teardown(self):
+        while True:
+            if self.state == State.ESTABLISHED:
+                print('FIN received in receiveFile(). Send ACK')
+                self.state = State.CLOSE_WAIT
+            elif self.state == State.CLOSE_WAIT:
+                print('Send FIN')
+                self.state = State.LAST_ACK
+            elif self.state == State.LAST_ACK:
+                print('Receive ACK. Send nothing.')
+                self.state == State.CLOSED
+
+                print('Teardown completed')
+                return
+
 
     def receive(self):
         return self.socket.recvfrom(4096)

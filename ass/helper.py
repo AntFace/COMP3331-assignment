@@ -7,6 +7,11 @@ class State(Enum):
     SYN_SENT = 2
     SYN_RCVD = 3
     ESTABLISHED = 4
+    FIN_WAIT_1 = 5
+    FIN_WAIT_2 = 6
+    TIME_WAIT = 7
+    CLOSE_WAIT = 8
+    LAST_ACK = 9
 
 class Header:
     def __init__(self, seqNum=0, ackNum=0, payloadLength=0, checksum=0, mws=0, mss=0, ack=False, syn=False, fin=False):

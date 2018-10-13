@@ -64,7 +64,23 @@ class Sender:
 
     def teardown(self):
         print('Teardown...')
-            
+        while True:
+            if self.state == State.ESTABLISHED:
+                print('Send FIN')
+                self.state = State.FIN_WAIT_1
+            elif self.state == State.FIN_WAIT_1:
+                print('Receive ACK. Send nothing.')
+                self.state = State.FIN_WAIT_2
+            elif self.state == State.FIN_WAIT_2:
+                print('Receive FIN. Send ACK.')
+                self.state = State.TIME_WAIT
+            elif self.state == State.TIME_WAIT:
+                print('Wait 30 seconds.')
+                self.state = State.CLOSED
+
+                print('Teardown completed')
+                return
+                
     def _prepareFile(self):
         print('Reading {filename}'.format(filename=self.filename))
         with open(self.filename, mode='rb') as f:
