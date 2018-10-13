@@ -2,9 +2,9 @@ from enum import Enum
 
 # Classes
 class State(Enum):
-    INACTIVE = 0
-    HANDSHAKE = 1
-    CONNECTED = 2
+    CLOSED = 0
+    SYN_SENT = 1
+    ESTABLISHED = 2
 
 class Header:
     def __init__(self, seqNum=0, ackNum=0, payloadLength=0, checksum=0, mws=0, mss=0, ack=False, syn=False, fin=False):

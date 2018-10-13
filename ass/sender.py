@@ -14,7 +14,7 @@ class Sender:
         self.mss = mss
         self.gamma = gamma
 
-        self.state = State.INACTIVE
+        self.state = State.CLOSED
         self.seqNum = 0
 
         self.payloads = self._prepareFile()
@@ -26,19 +26,19 @@ class Sender:
         self.socket.settimeout(1) # Set timeout to 1 for now
 
         while True:
-            if self.state == State.INACTIVE:
+            if self.state == State.CLOSED:
                 header = Header(seqNum=self.seqNum, syn=True) # SYN
                 self._send(header=header)
                 self.seqNum += 1
-                self.state = State.HANDSHAKE
+                self.state = State.SYN_SENT
                 print('SYN sent')
-            elif self.state == State.HANDSHAKE:
+            elif self.state == State.SYN_SENT:
                 received = self._receive()
                 receivedHeader = decode(received).header
                 if receivedHeader.syn and receivedHeader.ack:
                     print('SYN+ACK received')
-                    self.state = State.CONNECTED
-            elif self.state == State.CONNECTED:
+                    self.state = State.ESTABLISHED
+            elif self.state == State.ESTABLISHED:
                 header = Header(seqNum=self.seqNum, ack=True) # ACK
                 print('ACK sent')
                 self._send(header=header)
