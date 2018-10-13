@@ -9,16 +9,51 @@ class Receiver:
         self.receiverPort = receiverPort
         self.filename = filename
 
-        self.state = State.LISTEN
+        self.state = State.CLOSED
         self.ackNum = 0
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('localhost', self.receiverPort))
 
+    def listen(self):
+        self.state = State.LISTEN
+        while True:
+            message, address = receiver.receive()
+            header = decode(message).header
+            if self.state == State.LISTEN and header.syn:
+                self.state = State.SYN_RCVD
+                self.ackNum = header.seqNum + 1
+                responseHeader = Header(ackNum=self.ackNum, ack=True, syn=True) # SYN+ACK
+                receiver.send(address=address, header=responseHeader)
+                print('Sent SYN+ACK')
+            elif self.state == State.SYN_RCVD and header.ack:
+                self.state = State.ESTABLISHED
+                self.ackNum = header.seqNum + 1
+                print('Connection established')
+
+                return
+
+    def receiveFile(self):
+        while True:
+            message, address = receiver.receive()
+            message = decode(message)
+            header = message.header
+            print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=receiver.ackNum))
+            if header.seqNum == self.ackNum:
+                self.write(message.payload)
+                responseHeader = Header(ackNum=self.ackNum, ack=True)
+            elif header.seqNum > self.ackNum:
+                self.addToBuffer(message)
+                responseHeader = Header(ackNum=self.ackNum, ack=True)
+
+            receiver.send(address=address, header=responseHeader)
+
     def receive(self):
         return self.socket.recvfrom(4096)
 
     def send(self, address, header=None, payload=None):
+        if not header:
+            return
         if payload:
             header = Header(ackNum=self.ackNum)
             message = Message(header, payload)
@@ -48,30 +83,5 @@ if __name__ == '__main__':
     filename = sys.argv[2]
 
     receiver = Receiver(receiverPort, filename)
-
-    while True:
-        message, address = receiver.receive()
-        if message:
-            header = decode(message).header
-            if header.syn:
-                receiver.state = State.SYN_RCVD
-                receiver.ackNum = header.seqNum + 1
-                responseHeader = Header(ackNum=receiver.ackNum, ack=True, syn=True) # SYN+ACK
-                print('Sent SYN+ACK')
-            elif header.ack:
-                receiver.state = State.ESTABLISHED
-                receiver.ackNum = header.seqNum + 1
-                responseHeader = Header(ackNum=receiver.ackNum)
-                print('Connection established')
-            else:
-                message = decode(message)
-                print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=receiver.ackNum))
-                if message.header.seqNum == receiver.ackNum:
-                    receiver.write(message.payload)
-                    responseHeader = Header(ackNum=receiver.ackNum, ack=True)
-                elif message.header.seqNum > receiver.ackNum:
-                    receiver.addToBuffer(message)
-                    responseHeader = Header(ackNum=receiver.ackNum, ack=True)
-  
-            receiver.send(address=address, header=responseHeader)
-
+    receiver.listen()
+    receiver.receiveFile()

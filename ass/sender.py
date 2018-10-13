@@ -43,7 +43,6 @@ class Sender:
                 print('ACK sent')
                 self._send(header=header)
                 self.seqNum += 1
-                received = self._receive()
                 
                 return
 
