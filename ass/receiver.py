@@ -9,6 +9,7 @@ class Receiver:
         self.receiverPort = receiverPort
         self.filename = filename
 
+        self.state = State.LISTEN
         self.ackNum = 0
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -53,10 +54,12 @@ if __name__ == '__main__':
         if message:
             header = decode(message).header
             if header.syn:
+                receiver.state = State.SYN_RCVD
                 receiver.ackNum = header.seqNum + 1
                 responseHeader = Header(ackNum=receiver.ackNum, ack=True, syn=True) # SYN+ACK
                 print('Sent SYN+ACK')
             elif header.ack:
+                receiver.state = State.ESTABLISHED
                 receiver.ackNum = header.seqNum + 1
                 responseHeader = Header(ackNum=receiver.ackNum)
                 print('Connection established')

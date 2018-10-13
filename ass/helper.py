@@ -3,8 +3,10 @@ from enum import Enum
 # Classes
 class State(Enum):
     CLOSED = 0
-    SYN_SENT = 1
-    ESTABLISHED = 2
+    LISTEN = 1
+    SYN_SENT = 2
+    SYN_RCVD = 3
+    ESTABLISHED = 4
 
 class Header:
     def __init__(self, seqNum=0, ackNum=0, payloadLength=0, checksum=0, mws=0, mss=0, ack=False, syn=False, fin=False):
