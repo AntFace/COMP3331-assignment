@@ -38,9 +38,11 @@ class Receiver:
             message, address = receiver._receive()
             message = decode(message)
             header = message.header
+            payload = message.payload
             print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=receiver.ackNum))
             if header.seqNum == self.ackNum:
-                self._write(message.payload)
+                self._write(payload)
+                self.ackNum += len(payload)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
             elif header.seqNum > self.ackNum:
                 self._addToBuffer(message)
@@ -81,14 +83,14 @@ class Receiver:
         self.socket.sendto(message.encode(), address)
 
     def _write(self, payload):
-        print('Writing to file...')
         if self.ackNum == 1:
+            print('Writing to file...')
             with open(self.filename, 'w') as f:
                 f.write(payload)
         else:
+            print('Appending to file...')
             with open(self.filename, 'a') as f:
                 f.write(payload)
-        self.ackNum += len(payload)
 
     def _addToBuffer(self, message):
         print('Adding to buffer...')
