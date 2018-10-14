@@ -65,16 +65,31 @@ class Sender:
         print('Teardown...')
         while True:
             if self.state == State.ESTABLISHED:
-                print('Send FIN')
+                header = Header(seqNum=self.seqNum, fin=True)
+                self._send(header=header)
+                print('FIN sent')
                 self.state = State.FIN_WAIT_1
             elif self.state == State.FIN_WAIT_1:
-                print('Receive ACK. Send nothing.')
-                self.state = State.FIN_WAIT_2
+                response = decode(self._receive())
+                responseHeader = response.header
+                if responseHeader.ack:
+                    print('ACK received')
+                    self.state = State.FIN_WAIT_2
             elif self.state == State.FIN_WAIT_2:
-                print('Receive FIN. Send ACK.')
-                self.state = State.TIME_WAIT
+                response = decode(self._receive())
+                responseHeader = response.header
+                if responseHeader.fin:
+                    print('FIN received')
+                    self.seqNum += 1
+                    header = Header(seqNum=self.seqNum, ack=True)
+                    self._send(header=header)
+                    print('ACK sent')
+                    self.state = State.TIME_WAIT
             elif self.state == State.TIME_WAIT:
-                print('Wait 30 seconds.')
+                print('Waiting 30 seconds...')
+                time.sleep(30)
+                self.socket.close()
+                print('Socket closed')
                 self.state = State.CLOSED
 
                 print('Teardown completed')

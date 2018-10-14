@@ -42,29 +42,40 @@ class Receiver:
             header = message.header
             payload = message.payload
             print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=self.ackNum))
-            if header.seqNum == self.ackNum:
+            if header.fin:
+                return self.teardown(finAddress=address)
+            elif header.seqNum == self.ackNum:
                 self._write(payload)
                 self.ackNum += len(payload)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
             elif header.seqNum > self.ackNum:
                 self._addToBuffer(message)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
-            elif header.fin:
-                self.teardown()
 
             self._send(address=address, header=responseHeader)
 
-    def teardown(self):
+    def teardown(self, finAddress):
         while True:
             if self.state == State.ESTABLISHED:
-                print('FIN received in receiveFile(). Send ACK')
+                print('FIN received in receiveFile()')
+                self.ackNum += 1
+                responseHeader = Header(ackNum=self.ackNum, ack=True)
+                self._send(address=finAddress, header=responseHeader)
+                print('ACK sent')
                 self.state = State.CLOSE_WAIT
             elif self.state == State.CLOSE_WAIT:
-                print('Send FIN')
+                responseHeader = Header(ackNum=self.ackNum, fin=True)
+                self._send(address=finAddress, header=responseHeader)
+                print('FIN sent')
                 self.state = State.LAST_ACK
             elif self.state == State.LAST_ACK:
-                print('Receive ACK. Send nothing.')
-                self.state == State.CLOSED
+                message, address = self._receive()
+                header = decode(message).header
+                if header.ack:
+                    print('ACK received')
+                    self.socket.close()
+                    print('Socket closed')
+                    self.state == State.CLOSED
 
                 print('Teardown completed')
                 return
