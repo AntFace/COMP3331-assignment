@@ -22,12 +22,14 @@ class Receiver:
             message, address = receiver._receive()
             header = decode(message).header
             if self.state == State.LISTEN and header.syn:
+                print('SYN received')
                 self.state = State.SYN_RCVD
                 self.ackNum = 1
                 responseHeader = Header(ackNum=self.ackNum, ack=True, syn=True) # SYN+ACK
                 receiver._send(address=address, header=responseHeader)
                 print('Sent SYN+ACK')
             elif self.state == State.SYN_RCVD and header.ack:
+                print('ACK received')
                 self.state = State.ESTABLISHED
                 print('Connection established')
 
