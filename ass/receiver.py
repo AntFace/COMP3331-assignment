@@ -23,13 +23,12 @@ class Receiver:
             header = decode(message).header
             if self.state == State.LISTEN and header.syn:
                 self.state = State.SYN_RCVD
-                self.ackNum = header.seqNum + 1
+                self.ackNum = 1
                 responseHeader = Header(ackNum=self.ackNum, ack=True, syn=True) # SYN+ACK
                 receiver.send(address=address, header=responseHeader)
                 print('Sent SYN+ACK')
             elif self.state == State.SYN_RCVD and header.ack:
                 self.state = State.ESTABLISHED
-                self.ackNum = header.seqNum + 1
                 print('Connection established')
 
                 return
@@ -83,7 +82,7 @@ class Receiver:
 
     def write(self, payload):
         print('Writing to file...')
-        if self.ackNum == 2:
+        if self.ackNum == 1:
             with open(self.filename, 'w') as f:
                 f.write(payload)
         else:

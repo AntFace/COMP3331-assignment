@@ -29,9 +29,8 @@ class Sender:
             if self.state == State.CLOSED:
                 header = Header(seqNum=self.seqNum, syn=True) # SYN
                 self._send(header=header)
-                self.seqNum += 1
-                self.state = State.SYN_SENT
                 print('SYN sent')
+                self.state = State.SYN_SENT
             elif self.state == State.SYN_SENT:
                 received = self._receive()
                 receivedHeader = decode(received).header
@@ -39,10 +38,10 @@ class Sender:
                     print('SYN+ACK received')
                     self.state = State.ESTABLISHED
             elif self.state == State.ESTABLISHED:
-                header = Header(seqNum=self.seqNum, ack=True) # ACK
-                print('ACK sent')
-                self._send(header=header)
                 self.seqNum += 1
+                header = Header(seqNum=self.seqNum, ack=True) # ACK
+                self._send(header=header)
+                print('ACK sent')
                 
                 return
 
