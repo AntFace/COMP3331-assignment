@@ -19,14 +19,14 @@ class Receiver:
         print('Listening for connection...')
         self.state = State.LISTEN
         while True:
-            message, address = receiver._receive()
+            message, address = self._receive()
             header = decode(message).header
             if self.state == State.LISTEN and header.syn:
                 print('SYN received')
                 self.state = State.SYN_RCVD
                 self.ackNum = 1
                 responseHeader = Header(ackNum=self.ackNum, ack=True, syn=True) # SYN+ACK
-                receiver._send(address=address, header=responseHeader)
+                self._send(address=address, header=responseHeader)
                 print('Sent SYN+ACK')
             elif self.state == State.SYN_RCVD and header.ack:
                 print('ACK received')
@@ -37,11 +37,11 @@ class Receiver:
 
     def receiveFile(self):
         while True:
-            message, address = receiver._receive()
+            message, address = self._receive()
             message = decode(message)
             header = message.header
             payload = message.payload
-            print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=receiver.ackNum))
+            print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=self.ackNum))
             if header.seqNum == self.ackNum:
                 self._write(payload)
                 self.ackNum += len(payload)
@@ -52,7 +52,7 @@ class Receiver:
             elif header.fin:
                 self.teardown()
 
-            receiver._send(address=address, header=responseHeader)
+            self._send(address=address, header=responseHeader)
 
     def teardown(self):
         while True:
