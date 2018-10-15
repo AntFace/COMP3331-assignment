@@ -12,6 +12,8 @@ class Receiver:
         self.state = State.CLOSED
         self.ackNum = 0
 
+        self.buffer = {}
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('localhost', self.receiverPort))
 
@@ -47,6 +49,11 @@ class Receiver:
             elif header.seqNum == self.ackNum:
                 self._write(payload)
                 self.ackNum += len(payload)
+                while self.ackNum in self.buffer:
+                    payload = self.buffer[self.ackNum]
+                    del self.buffer[self.ackNum]
+                    self._write(payload)
+                    self.ackNum += len(payload)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
             elif header.seqNum > self.ackNum:
                 self._addToBuffer(segment)
@@ -101,6 +108,7 @@ class Receiver:
 
     def _addToBuffer(self, segment):
         print('Adding to buffer...')
+        self.buffer[segment.header.seqNum] = segment.payload
 
 if __name__ == '__main__':
     if len(sys.argv) != 3 or not sys.argv[1].isdigit():
