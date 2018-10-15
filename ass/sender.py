@@ -50,12 +50,13 @@ class Sender:
         for payload in self.payloads:
             header = Header(seqNum=self.seqNum)
             self._send(header, payload)
+            print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, self.seqNum + len(payload)))
             try:
                 response = decode(self._receive())
                 print('Received response. ACK num: {}'.format(response.header.ackNum))
                 responseHeader = response.header
-                if responseHeader.ackNum == self.seqNum:
-                    print('ACK for {} received'.format(self.seqNum))
+                if responseHeader.ackNum == self.seqNum + len(payload):
+                    self.seqNum = responseHeader.ackNum
             except socket.timeout:
                 print('Timed out!')
 
@@ -103,9 +104,8 @@ class Sender:
         return [content[self.mss * i:self.mss * (i + 1)] for i in range(0, int(len(content) / self.mss + 1))]
 
     def _send(self, header=None, payload=None):
-        if payload:
-            self.seqNum = header.seqNum + len(payload)
         segment = Segment(header, payload)
+
         self.socket.send(segment.encode())
 
     def _receive(self):
