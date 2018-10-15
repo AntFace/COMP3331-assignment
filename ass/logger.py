@@ -6,12 +6,11 @@ class Logger:
         self.startTime = None
 
     def log(self, event, segment):
+        # Calculate time
         if not self.startTime:
             self.startTime = currentTime = time.time()
         else:
             currentTime = time.time()
-        
-        # Calculate time
         logTime = currentTime - self.startTime
 
         # Generate packetType
