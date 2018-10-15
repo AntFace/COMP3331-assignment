@@ -86,8 +86,8 @@ class Sender:
                     print('ACK sent')
                     self.state = State.TIME_WAIT
             elif self.state == State.TIME_WAIT:
-                print('Waiting 30 seconds...')
-                time.sleep(30)
+                print('Waiting 10 seconds...')
+                time.sleep(10)
                 self.socket.close()
                 print('Socket closed')
                 self.state = State.CLOSED
