@@ -28,6 +28,17 @@ class Logger:
         
 
     def log(self, event, segment):
+        # Update final statistics
+        if event == 'snd':
+            self.segmentsTransmitted += 1
+            if segment.payload:
+                self.sentFilesize += len(segment.payload)
+        elif event == 'rcv':
+            self.totalSegmentsReceived += 1
+            if segment.payload:
+                self.dataSegmentsReceived += 1
+                self.receivedFilesize += len(segment.payload)
+
         # Calculate time
         if not self.startTime:
             self.startTime = currentTime = time.time()
