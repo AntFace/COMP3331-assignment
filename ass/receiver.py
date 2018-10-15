@@ -76,8 +76,8 @@ class Receiver:
                     self.socket.close()
                     print('Socket closed')
                     self.state == State.CLOSED
+                    print('Teardown completed')
 
-                print('Teardown completed')
                 return
 
 
