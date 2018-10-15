@@ -3,6 +3,7 @@ import sys
 import time
 
 from helper import *
+from logger import *
 
 class Receiver:
     def __init__(self, receiverPort, filename):
@@ -14,6 +15,8 @@ class Receiver:
         self.ackNum = 0
 
         self.buffer = {}
+
+        self.logger = Logger('Receiver_log.txt')
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind(('localhost', self.receiverPort))
@@ -90,12 +93,14 @@ class Receiver:
 
     def _send(self, address, header=None, payload=None):
         segment = Segment(header=header)
+        self.logger.log('snd', segment)
 
         return self.socket.sendto(segment.encode(), address)
 
     def _receive(self):
         segment, address = self.socket.recvfrom(4096)
         segment = decode(segment)
+        self.logger.log('rcv', segment)
 
         return (segment, address)
 
