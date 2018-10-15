@@ -15,6 +15,7 @@ class Sender:
 
         self.state = State.CLOSED
         self.seqNum = 0
+        self.ackNum = 0
 
         self.filesize = 0
         self.payloads = self._prepareFile()
@@ -27,7 +28,7 @@ class Sender:
     def handshake(self): # three-way handshake (SYN, SYN+ACK, ACK)
         while True:
             if self.state == State.CLOSED:
-                header = Header(seqNum=self.seqNum, syn=True) # SYN
+                header = Header(seqNum=self.seqNum, ackNum=self.ackNum, syn=True) # SYN
                 self._send(header=header)
                 print('SYN sent')
                 self.state = State.SYN_SENT
@@ -36,10 +37,11 @@ class Sender:
                 receivedHeader = decode(received).header
                 if receivedHeader.syn and receivedHeader.ack:
                     print('SYN+ACK received')
+                    self.ackNum += 1
                     self.state = State.ESTABLISHED
             elif self.state == State.ESTABLISHED:
                 self.seqNum += 1
-                header = Header(seqNum=self.seqNum, ack=True) # ACK
+                header = Header(seqNum=self.seqNum, ackNum=self.ackNum, ack=True) # ACK
                 self._send(header=header)
                 print('ACK sent')
                 
@@ -50,7 +52,7 @@ class Sender:
         baseSeqNum = self.seqNum
         while self.seqNum < baseSeqNum + self.filesize:
             payload = self.payloads[int((self.seqNum - baseSeqNum) / self.mss)]
-            header = Header(seqNum=self.seqNum)
+            header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
             self._send(header, payload)
             expectedAckNum = self.seqNum + len(payload)
             print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, expectedAckNum))
@@ -66,7 +68,7 @@ class Sender:
         print('Teardown...')
         while True:
             if self.state == State.ESTABLISHED:
-                header = Header(seqNum=self.seqNum, fin=True)
+                header = Header(seqNum=self.seqNum, ackNum=self.ackNum, fin=True)
                 self._send(header=header)
                 print('FIN sent')
                 self.state = State.FIN_WAIT_1
@@ -82,7 +84,8 @@ class Sender:
                 if responseHeader.fin:
                     print('FIN received')
                     self.seqNum += 1
-                    header = Header(seqNum=self.seqNum, ack=True)
+                    self.ackNum += 1
+                    header = Header(seqNum=self.seqNum, ackNum=self.ackNum, ack=True)
                     self._send(header=header)
                     print('ACK sent')
                     self.state = State.TIME_WAIT

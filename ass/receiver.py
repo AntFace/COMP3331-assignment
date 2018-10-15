@@ -10,6 +10,7 @@ class Receiver:
         self.filename = filename
 
         self.state = State.CLOSED
+        self.seqNum = 0
         self.ackNum = 0
 
         self.buffer = {}
@@ -26,12 +27,13 @@ class Receiver:
             if self.state == State.LISTEN and header.syn:
                 print('SYN received')
                 self.state = State.SYN_RCVD
-                self.ackNum = 1
-                responseHeader = Header(ackNum=self.ackNum, ack=True, syn=True) # SYN+ACK
+                self.ackNum += 1
+                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True, syn=True) # SYN+ACK
                 self._send(address=address, header=responseHeader)
                 print('Sent SYN+ACK')
             elif self.state == State.SYN_RCVD and header.ack:
                 print('ACK received')
+                self.seqNum += 1
                 self.state = State.ESTABLISHED
                 print('Connection established')
 
@@ -54,10 +56,10 @@ class Receiver:
                     del self.buffer[self.ackNum]
                     self._write(payload)
                     self.ackNum += len(payload)
-                responseHeader = Header(ackNum=self.ackNum, ack=True)
+                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
             elif header.seqNum > self.ackNum:
                 self._addToBuffer(segment)
-                responseHeader = Header(ackNum=self.ackNum, ack=True)
+                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
 
             self._send(address=address, header=responseHeader)
 
@@ -66,12 +68,12 @@ class Receiver:
             if self.state == State.ESTABLISHED:
                 print('FIN received in receiveFile()')
                 self.ackNum += 1
-                responseHeader = Header(ackNum=self.ackNum, ack=True)
+                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
                 self._send(address=finAddress, header=responseHeader)
                 print('ACK sent')
                 self.state = State.CLOSE_WAIT
             elif self.state == State.CLOSE_WAIT:
-                responseHeader = Header(ackNum=self.ackNum, fin=True)
+                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, fin=True)
                 self._send(address=finAddress, header=responseHeader)
                 print('FIN sent')
                 self.state = State.LAST_ACK
