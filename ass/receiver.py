@@ -108,11 +108,11 @@ class Receiver:
     def _write(self, payload):
         if self.ackNum == 1:
             print('Writing to file...')
-            with open(self.filename, 'w') as f:
+            with open(self.filename, 'wb') as f:
                 return f.write(payload)
         else:
             print('Appending to file...')
-            with open(self.filename, 'a') as f:
+            with open(self.filename, 'ab') as f:
                 return f.write(payload)
 
     def _addToBuffer(self, segment):

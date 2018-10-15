@@ -61,7 +61,7 @@ def decode(encodedSegment):
     header = Header(seqNum, ackNum, checksum, ack, syn, fin)
 
     if len(encodedSegment) > 82:
-        payload = encodedSegment[83:].decode('iso-8859-1')
+        payload = encodedSegment[83:]
         
         return Segment(header, payload)
     else:
