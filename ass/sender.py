@@ -36,9 +36,9 @@ class Sender:
                 print('SYN sent')
                 self.state = State.SYN_SENT
             elif self.state == State.SYN_SENT:
-                received = self._receive()
-                receivedHeader = decode(received).header
-                if receivedHeader.syn and receivedHeader.ack:
+                response = self._receive()
+                responseHeader = decode(response).header
+                if responseHeader.syn and responseHeader.ack:
                     print('SYN+ACK received')
                     self.ackNum += 1
                     self.state = State.ESTABLISHED
