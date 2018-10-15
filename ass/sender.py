@@ -106,7 +106,7 @@ class Sender:
     def _send(self, header=None, payload=None):
         segment = Segment(header, payload)
 
-        self.socket.send(segment.encode())
+        return self.socket.send(segment.encode())
 
     def _receive(self):
         return self.socket.recv(4096)

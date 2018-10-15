@@ -87,7 +87,7 @@ class Receiver:
     def _send(self, address, header=None, payload=None):
         segment = Segment(header=header)
 
-        self.socket.sendto(segment.encode(), address)
+        return self.socket.sendto(segment.encode(), address)
 
     def _write(self, payload):
         if self.ackNum == 1:
