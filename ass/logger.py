@@ -38,6 +38,9 @@ class Logger:
             if segment.payload:
                 self.dataSegmentsReceived += 1
                 self.receivedFilesize += len(segment.payload)
+        elif event == 'drop':
+            self.segmentsTransmitted += 1
+            self.segmentsDropped += 1
 
         # Calculate time
         if not self.startTime:
@@ -49,6 +52,7 @@ class Logger:
         # Generate packetType
         if segment.payload:
             packetType = 'D'
+            self.segmentsHandledByPLD += 1
         elif segment.header.syn and segment.header.ack:
             packetType = 'SA'
         elif segment.header.syn:

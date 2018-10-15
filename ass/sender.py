@@ -59,7 +59,7 @@ class Sender:
         while self.seqNum < baseSeqNum + self.filesize:
             payload = self.payloads[int((self.seqNum - baseSeqNum) / self.mss)]
             header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
-            self._send(header, payload)
+            self._send(header, payload, PLD=True)
             expectedAckNum = self.seqNum + len(payload)
             print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, expectedAckNum))
             try:
@@ -114,8 +114,11 @@ class Sender:
 
         return [content[self.mss * i:self.mss * (i + 1)] for i in range(0, int(self.filesize / self.mss + 1))]
 
-    def _send(self, header=None, payload=None):
+    def _send(self, header=None, payload=None, PLD=False):
         segment = Segment(header, payload)
+        if PLD:
+            if self.PLD.checkDrop():
+                return self.logger.log('drop', segment)
         self.logger.log('snd', segment)
 
         return self.socket.send(segment.encode())

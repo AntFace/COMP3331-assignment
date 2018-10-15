@@ -1,3 +1,5 @@
+import random
+
 class PLD:
     def __init__(self, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed):
         self.pDrop = pDrop
@@ -7,4 +9,10 @@ class PLD:
         self.maxOrder = maxOrder
         self.pDelay = pDelay
         self.maxDelay = maxDelay
-        self.seed = seed
+        random.seed(seed)
+
+    def checkDrop(self):
+        if random.random() < self.pDrop:
+            return True
+        else:
+            return False
