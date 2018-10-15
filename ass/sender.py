@@ -62,8 +62,6 @@ class Sender:
             except socket.timeout:
                 print('Timed out!')
 
-        return
-
     def teardown(self):
         print('Teardown...')
         while True:
@@ -94,8 +92,8 @@ class Sender:
                 self.socket.close()
                 print('Socket closed')
                 self.state = State.CLOSED
-
                 print('Teardown completed')
+
                 return
                 
     def _prepareFile(self):

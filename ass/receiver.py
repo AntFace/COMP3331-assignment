@@ -85,8 +85,7 @@ class Receiver:
                     self.state == State.CLOSED
                     print('Teardown completed')
 
-                return
-
+                    return
 
     def _receive(self):
         return self.socket.recvfrom(4096)
