@@ -4,15 +4,18 @@ import time
 
 from helper import *
 from logger import *
+from pld import *
 
 class Sender:
-    def __init__(self, receiverHost, receiverPort, filename, mws, mss, gamma):
+    def __init__(self, receiverHost, receiverPort, filename, mws, mss, gamma, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed):
         self.receiverHost = receiverHost
         self.receiverPort = receiverPort
         self.filename = filename
         self.mws = mws
         self.mss = mss
         self.gamma = gamma
+
+        self.PLD = PLD(pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed)
 
         self.state = State.CLOSED
         self.seqNum = 0
@@ -137,16 +140,16 @@ if __name__ == '__main__':
     
     #PLD module arguments
     if len(sys.argv) == 15:
-        pDrop = sys.argv[7]
-        pDuplicate = sys.argv[8]
-        pCorrupt = sys.argv[9]
-        pOrder = sys.argv[10]
-        maxOrder = sys.argv[11]
-        pDelay = sys.argv[12]
-        maxDelay = sys.argv[13]
+        pDrop = float(sys.argv[7])
+        pDuplicate = float(sys.argv[8])
+        pCorrupt = float(sys.argv[9])
+        pOrder = float(sys.argv[10])
+        maxOrder = int(sys.argv[11])
+        pDelay = float(sys.argv[12])
+        maxDelay = int(sys.argv[13])
         seed = int(sys.argv[14])
     
-    sender = Sender(receiverHost, receiverPort, filename, mws, mss, gamma)
+    sender = Sender(receiverHost, receiverPort, filename, mws, mss, gamma, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed)
     sender.handshake()
     sender.sendFile()
     sender.teardown()
