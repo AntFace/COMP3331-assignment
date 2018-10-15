@@ -1,4 +1,3 @@
-import random
 import socket
 import sys
 import time
