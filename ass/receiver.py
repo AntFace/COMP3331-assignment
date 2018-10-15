@@ -83,6 +83,7 @@ class Receiver:
                 segment, address = self._receive()
                 header = segment.header
                 if header.ack:
+                    self.logger.logFinal(sender=False)
                     print('ACK received')
                     self.socket.close()
                     print('Socket closed')
