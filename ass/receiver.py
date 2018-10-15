@@ -85,13 +85,7 @@ class Receiver:
         return self.socket.recvfrom(4096)
 
     def _send(self, address, header=None, payload=None):
-        if not header:
-            return
-        if payload:
-            header = Header(ackNum=self.ackNum)
-            segment = Segment(header, payload)
-        else:
-            segment = Segment(header=header)
+        segment = Segment(header=header)
 
         self.socket.sendto(segment.encode(), address)
 
