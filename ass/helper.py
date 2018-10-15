@@ -14,10 +14,9 @@ class State(Enum):
     LAST_ACK = 9
 
 class Header:
-    def __init__(self, seqNum=0, ackNum=0, payloadLength=0, checksum=0, mws=0, mss=0, ack=False, syn=False, fin=False):
+    def __init__(self, seqNum=0, ackNum=0, checksum=0, mws=0, mss=0, ack=False, syn=False, fin=False):
         self.seqNum = seqNum
         self.ackNum = ackNum
-        self.payloadLength = payloadLength
         self.checksum = checksum
         self.mws = mws
         self.mss = mss
@@ -28,7 +27,6 @@ class Header:
     def encode(self):
         bits = '{0:032b}'.format(self.seqNum)
         bits += '{0:032b}'.format(self.ackNum)
-        bits += '{0:032b}'.format(self.payloadLength)
         bits += '{0:016b}'.format(self.checksum)
         bits += '{0:032b}'.format(self.mws)
         bits += '{0:032b}'.format(self.mss)
@@ -59,18 +57,17 @@ class Message:
 def decode(encodedMessage):
     seqNum = int(encodedMessage[0:32], 2)
     ackNum = int(encodedMessage[32:64], 2)
-    payloadLength = int(encodedMessage[64:96], 2)
-    checksum = int(encodedMessage[96:112], 2)
-    mws = int(encodedMessage[122:144], 2)
-    mss = int(encodedMessage[144:176], 2)
-    ack = int(encodedMessage[176:177], 2)
-    syn = int(encodedMessage[177:178], 2)
-    fin = int(encodedMessage[178:179], 2)
+    checksum = int(encodedMessage[64:80], 2)
+    mws = int(encodedMessage[80:112], 2)
+    mss = int(encodedMessage[112:144], 2)
+    ack = int(encodedMessage[144:145], 2)
+    syn = int(encodedMessage[145:146], 2)
+    fin = int(encodedMessage[146:147], 2)
 
-    header = Header(seqNum, ackNum, payloadLength, checksum, mws, mss, ack, syn, fin)
+    header = Header(seqNum, ackNum, checksum, mws, mss, ack, syn, fin)
 
-    if payloadLength:
-        payload = encodedMessage[179:].decode('iso-8859-1')
+    if len(encodedMessage) > 146:
+        payload = encodedMessage[147:].decode('iso-8859-1')
         
         return Message(header, payload)
     else:

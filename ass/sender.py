@@ -48,7 +48,7 @@ class Sender:
     def sendFile(self):
         print('Sending file...')
         for payload in self.payloads:
-            header = Header(seqNum=self.seqNum, payloadLength=len(payload))
+            header = Header(seqNum=self.seqNum)
             self._send(header, payload)
             try:
                 response = decode(self._receive())
