@@ -37,7 +37,7 @@ class Sender:
                 self.state = State.SYN_SENT
             elif self.state == State.SYN_SENT:
                 response = self._receive()
-                responseHeader = decode(response).header
+                responseHeader = response.header
                 if responseHeader.syn and responseHeader.ack:
                     print('SYN+ACK received')
                     self.ackNum += 1
@@ -60,7 +60,7 @@ class Sender:
             expectedAckNum = self.seqNum + len(payload)
             print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, expectedAckNum))
             try:
-                response = decode(self._receive())
+                response = self._receive()
                 print('Received response. ACK num: {}'.format(response.header.ackNum))
                 responseHeader = response.header
                 self.seqNum = responseHeader.ackNum
@@ -76,13 +76,13 @@ class Sender:
                 print('FIN sent')
                 self.state = State.FIN_WAIT_1
             elif self.state == State.FIN_WAIT_1:
-                response = decode(self._receive())
+                response = self._receive()
                 responseHeader = response.header
                 if responseHeader.ack:
                     print('ACK received')
                     self.state = State.FIN_WAIT_2
             elif self.state == State.FIN_WAIT_2:
-                response = decode(self._receive())
+                response = self._receive()
                 responseHeader = response.header
                 if responseHeader.fin:
                     print('FIN received')
@@ -117,7 +117,9 @@ class Sender:
         return self.socket.send(segment.encode())
 
     def _receive(self):
-        return self.socket.recv(4096)
+        response = decode(self.socket.recv(4096))
+
+        return response
 
 if __name__ == '__main__':
     if len(sys.argv) != 7 and len(sys.argv) != 15:
