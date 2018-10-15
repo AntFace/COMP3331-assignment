@@ -60,9 +60,6 @@ def decode(encodedSegment):
 
     header = Header(seqNum, ackNum, checksum, ack, syn, fin)
 
-    if len(encodedSegment) > 82:
-        payload = encodedSegment[83:]
-        
-        return Segment(header, payload)
-    else:
-        return Segment(header)
+    payload = encodedSegment[83:]
+    
+    return Segment(header, payload)
