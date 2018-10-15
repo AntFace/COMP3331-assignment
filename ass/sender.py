@@ -118,6 +118,7 @@ class Sender:
 
     def _receive(self):
         response = decode(self.socket.recv(4096))
+        self.logger.log('rcv', response)
 
         return response
 
