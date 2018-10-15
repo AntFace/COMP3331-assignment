@@ -16,6 +16,7 @@ class Sender:
         self.state = State.CLOSED
         self.seqNum = 0
 
+        self.filesize = 0
         self.payloads = self._prepareFile()
 
         # Set up socket
@@ -46,16 +47,18 @@ class Sender:
 
     def sendFile(self):
         print('Sending file...')
-        for payload in self.payloads:
+        baseSeqNum = self.seqNum
+        while self.seqNum < baseSeqNum + self.filesize:
+            payload = self.payloads[int((self.seqNum - baseSeqNum) / self.mss)]
             header = Header(seqNum=self.seqNum)
             self._send(header, payload)
-            print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, self.seqNum + len(payload)))
+            expectedAckNum = self.seqNum + len(payload)
+            print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, expectedAckNum))
             try:
                 response = decode(self._receive())
                 print('Received response. ACK num: {}'.format(response.header.ackNum))
                 responseHeader = response.header
-                if responseHeader.ackNum == self.seqNum + len(payload):
-                    self.seqNum = responseHeader.ackNum
+                self.seqNum = responseHeader.ackNum
             except socket.timeout:
                 print('Timed out!')
 
@@ -99,8 +102,9 @@ class Sender:
         print('Reading {filename}'.format(filename=self.filename))
         with open(self.filename, mode='rb') as f:
             content = f.read()
+        self.filesize = len(content)
 
-        return [content[self.mss * i:self.mss * (i + 1)] for i in range(0, int(len(content) / self.mss + 1))]
+        return [content[self.mss * i:self.mss * (i + 1)] for i in range(0, int(self.filesize / self.mss + 1))]
 
     def _send(self, header=None, payload=None):
         segment = Segment(header, payload)
