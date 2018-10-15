@@ -105,8 +105,8 @@ class Sender:
     def _send(self, header=None, payload=None):
         if payload:
             self.seqNum = header.seqNum + len(payload)
-        message = Message(header, payload)
-        self.socket.send(message.encode())
+        segment = Segment(header, payload)
+        self.socket.send(segment.encode())
 
     def _receive(self):
         return self.socket.recv(4096)

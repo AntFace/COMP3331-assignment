@@ -32,7 +32,7 @@ class Header:
         
         return bits.encode()
 
-class Message:
+class Segment:
     def __init__(self, header, payload=None):
         self.header = header
         self.payload = payload
@@ -50,19 +50,19 @@ class Message:
             return self.header.encode()
 
 # Functions
-def decode(encodedMessage):
-    seqNum = int(encodedMessage[0:32], 2)
-    ackNum = int(encodedMessage[32:64], 2)
-    checksum = int(encodedMessage[64:80], 2)
-    ack = int(encodedMessage[80:81], 2)
-    syn = int(encodedMessage[81:82], 2)
-    fin = int(encodedMessage[82:83], 2)
+def decode(encodedSegment):
+    seqNum = int(encodedSegment[0:32], 2)
+    ackNum = int(encodedSegment[32:64], 2)
+    checksum = int(encodedSegment[64:80], 2)
+    ack = int(encodedSegment[80:81], 2)
+    syn = int(encodedSegment[81:82], 2)
+    fin = int(encodedSegment[82:83], 2)
 
     header = Header(seqNum, ackNum, checksum, ack, syn, fin)
 
-    if len(encodedMessage) > 82:
-        payload = encodedMessage[83:].decode('iso-8859-1')
+    if len(encodedSegment) > 82:
+        payload = encodedSegment[83:].decode('iso-8859-1')
         
-        return Message(header, payload)
+        return Segment(header, payload)
     else:
-        return Message(header)
+        return Segment(header)

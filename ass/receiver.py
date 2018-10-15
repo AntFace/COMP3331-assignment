@@ -19,8 +19,8 @@ class Receiver:
         print('Listening for connection...')
         self.state = State.LISTEN
         while True:
-            message, address = self._receive()
-            header = decode(message).header
+            segment, address = self._receive()
+            header = decode(segment).header
             if self.state == State.LISTEN and header.syn:
                 print('SYN received')
                 self.state = State.SYN_RCVD
@@ -37,11 +37,11 @@ class Receiver:
 
     def receiveFile(self):
         while True:
-            message, address = self._receive()
-            message = decode(message)
-            header = message.header
-            payload = message.payload
-            print('Received message. Message Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=message.header.seqNum, ackNum=self.ackNum))
+            segment, address = self._receive()
+            segment = decode(segment)
+            header = segment.header
+            payload = segment.payload
+            print('Received segment. Segment Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=segment.header.seqNum, ackNum=self.ackNum))
             if header.fin:
                 return self.teardown(finAddress=address)
             elif header.seqNum == self.ackNum:
@@ -49,7 +49,7 @@ class Receiver:
                 self.ackNum += len(payload)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
             elif header.seqNum > self.ackNum:
-                self._addToBuffer(message)
+                self._addToBuffer(segment)
                 responseHeader = Header(ackNum=self.ackNum, ack=True)
 
             self._send(address=address, header=responseHeader)
@@ -69,8 +69,8 @@ class Receiver:
                 print('FIN sent')
                 self.state = State.LAST_ACK
             elif self.state == State.LAST_ACK:
-                message, address = self._receive()
-                header = decode(message).header
+                segment, address = self._receive()
+                header = decode(segment).header
                 if header.ack:
                     print('ACK received')
                     self.socket.close()
@@ -89,11 +89,11 @@ class Receiver:
             return
         if payload:
             header = Header(ackNum=self.ackNum)
-            message = Message(header, payload)
+            segment = Segment(header, payload)
         else:
-            message = Message(header=header)
+            segment = Segment(header=header)
 
-        self.socket.sendto(message.encode(), address)
+        self.socket.sendto(segment.encode(), address)
 
     def _write(self, payload):
         if self.ackNum == 1:
@@ -105,7 +105,7 @@ class Receiver:
             with open(self.filename, 'a') as f:
                 f.write(payload)
 
-    def _addToBuffer(self, message):
+    def _addToBuffer(self, segment):
         print('Adding to buffer...')
 
 if __name__ == '__main__':
