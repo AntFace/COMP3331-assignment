@@ -89,13 +89,13 @@ class Receiver:
 
                     return
 
-    def _receive(self):
-        return self.socket.recvfrom(4096)
-
     def _send(self, address, header=None, payload=None):
         segment = Segment(header=header)
 
         return self.socket.sendto(segment.encode(), address)
+
+    def _receive(self):
+        return self.socket.recvfrom(4096)
 
     def _write(self, payload):
         if self.ackNum == 1:
