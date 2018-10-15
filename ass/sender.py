@@ -3,6 +3,7 @@ import sys
 import time
 
 from helper import *
+from logger import *
 
 class Sender:
     def __init__(self, receiverHost, receiverPort, filename, mws, mss, gamma):
@@ -19,6 +20,8 @@ class Sender:
 
         self.filesize = 0
         self.payloads = self._prepareFile()
+
+        self.logger = Logger('Sender_log.txt')
 
         # Set up socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -109,6 +112,7 @@ class Sender:
 
     def _send(self, header=None, payload=None):
         segment = Segment(header, payload)
+        self.logger.log('snd', segment)
 
         return self.socket.send(segment.encode())
 
