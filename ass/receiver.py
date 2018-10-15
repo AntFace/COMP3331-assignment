@@ -23,7 +23,7 @@ class Receiver:
         self.state = State.LISTEN
         while True:
             segment, address = self._receive()
-            header = decode(segment).header
+            header = segment.header
             if self.state == State.LISTEN and header.syn:
                 print('SYN received')
                 self.state = State.SYN_RCVD
@@ -42,7 +42,6 @@ class Receiver:
     def receiveFile(self):
         while True:
             segment, address = self._receive()
-            segment = decode(segment)
             header = segment.header
             payload = segment.payload
             print('Received segment. Segment Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=segment.header.seqNum, ackNum=self.ackNum))
@@ -79,7 +78,7 @@ class Receiver:
                 self.state = State.LAST_ACK
             elif self.state == State.LAST_ACK:
                 segment, address = self._receive()
-                header = decode(segment).header
+                header = segment.header
                 if header.ack:
                     print('ACK received')
                     self.socket.close()
@@ -95,7 +94,10 @@ class Receiver:
         return self.socket.sendto(segment.encode(), address)
 
     def _receive(self):
-        return self.socket.recvfrom(4096)
+        segment, address = self.socket.recvfrom(4096)
+        segment = decode(segment)
+
+        return (segment, address)
 
     def _write(self, payload):
         if self.ackNum == 1:
