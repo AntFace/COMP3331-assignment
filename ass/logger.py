@@ -40,7 +40,7 @@ class Logger:
         ackNum = segment.header.ackNum
 
         # Generate log string
-        logString = '{0:<10}{1:<10.2f}{2:<10}{3:<10}{4:<10}{5}\n'.format(event, logTime, packetType, seqNum, payloadLength, ackNum)
+        logString = '{0:<10} {1:>10.2f} {2:^10} {3:>10} {4:>10} {5:>10}\n'.format(event, logTime, packetType, seqNum, payloadLength, ackNum)
 
         if logTime == 0:
             with open(self.filename, 'w') as f:
