@@ -57,6 +57,7 @@ class Sender:
     def sendFile(self):
         print('Sending file...')
         nextSeqNum = initialSeqNum = self.seqNum
+        duplicateACK = 0
         while self.seqNum < initialSeqNum + self.filesize:
             if nextSeqNum - initialSeqNum < self.filesize:
                 payload = self.payloads[nextSeqNum - initialSeqNum]
@@ -80,7 +81,17 @@ class Sender:
                     responseHeader = response.header
                     print('Received response. ACK num: {}'.format(responseHeader.ackNum))
                     if responseHeader.ackNum > self.seqNum:
+                        duplicateACK = 0
                         self.seqNum = responseHeader.ackNum
+                    else:
+                        duplicateACK += 1
+                        if duplicateACK == 3:
+                            print('Fast Retransmit!')
+                            duplicateACK = 0
+                            header = Header(seqNum=self.seqNum, ackNum = self.ackNum)
+                            payload = self.payloads[self.seqNum - initialSeqNum]
+                            self._send(header=header, payload=payload, event='snd/RXT/fast', PLD=True)
+                            print('Re-sent Segment. Seq num: {}'.format(header.seqNum))
 
     def teardown(self):
         print('Teardown...')
@@ -141,6 +152,8 @@ class Sender:
                     return self.logger.log('drop', segment)
                 elif event == 'snd/RXT/timeout':
                     return self.logger.log('drop/RXT/timeout', segment)
+                elif event == 'snd/RXT/fast':
+                    return self.logger.log('drop/RXT/fast', segment)
         self.logger.log(event, segment)
 
         return self.socket.send(segment.encode())

@@ -42,6 +42,12 @@ class Logger:
             if segment.payload:
                 self.sentFilesize += len(segment.payload)
             event = 'snd/RXT'
+        elif event == 'snd/RXT/fast':
+            self.segmentsTransmitted += 1
+            self.fastRetransmissions += 1
+            if segment.payload:
+                self.sentFilesize += len(segment.payload)
+            event = 'snd/RXT'
         elif event == 'rcv':
             self.totalSegmentsReceived += 1
             if segment.payload:
@@ -54,6 +60,11 @@ class Logger:
             self.segmentsTransmitted += 1
             self.segmentsDropped += 1
             self.timeoutRetransmissions += 1
+            event = 'drop'
+        elif event == 'drop/RXT/fast':
+            self.segmentsTransmitted += 1
+            self.segmentsDropped += 1
+            self.fastRetransmissions += 1
             event = 'drop'
 
         # Calculate time
