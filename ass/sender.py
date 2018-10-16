@@ -60,6 +60,8 @@ class Sender:
         while self.seqNum < baseSeqNum + self.filesize:
             payload = self.payloads[int((self.seqNum - baseSeqNum) / self.mss)]
             header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
+            if not self.timer.isRunning:
+                self.timer.start()
             self._send(header, payload, PLD=True)
             expectedAckNum = self.seqNum + len(payload)
             print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, expectedAckNum))
@@ -67,9 +69,13 @@ class Sender:
                 response = self._receive()
                 print('Received response. ACK num: {}'.format(response.header.ackNum))
                 responseHeader = response.header
+                if responseHeader.ackNum == expectedAckNum:
+                    self.timer.stop()
+                    self._updateTimeout()
                 self.seqNum = responseHeader.ackNum
             except socket.timeout:
                 print('Timed out!')
+                pass
 
     def teardown(self):
         print('Teardown...')
@@ -129,6 +135,9 @@ class Sender:
         self.logger.log('rcv', response)
 
         return response
+
+    def _updateTimeout(self):
+        return self.socket.settimeout(self.timer.getTimeoutInterval())
 
 if __name__ == '__main__':
     if len(sys.argv) != 7 and len(sys.argv) != 15:
