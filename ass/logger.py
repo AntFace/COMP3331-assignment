@@ -3,7 +3,7 @@ import time
 class Logger:
     def __init__(self, filename):
         self.filename = filename
-        self.startTime = None
+        self.startTime = time.time()
 
         # Sender Final Statistics
         self.sentFilesize = 0
@@ -43,11 +43,7 @@ class Logger:
             self.segmentsDropped += 1
 
         # Calculate time
-        if not self.startTime:
-            self.startTime = currentTime = time.time()
-        else:
-            currentTime = time.time()
-        logTime = currentTime - self.startTime
+        logTime = time.time() - self.startTime
 
         # Generate packetType
         if segment.payload:
@@ -79,7 +75,7 @@ class Logger:
         # Generate log string
         logString = '{0:<10} {1:>10.2f} {2:^10} {3:>10} {4:>10} {5:>10}\n'.format(event, logTime, packetType, seqNum, payloadLength, ackNum)
 
-        if logTime == 0:
+        if seqNum == 0 and ackNum == 0:
             with open(self.filename, 'w') as f:
                 return f.write(logString)
         else:
