@@ -56,9 +56,9 @@ class Sender:
 
     def sendFile(self):
         print('Sending file...')
-        baseSeqNum = self.seqNum
-        while self.seqNum < baseSeqNum + self.filesize:
-            payload = self.payloads[int((self.seqNum - baseSeqNum) / self.mss)]
+        initialSeqNum = self.seqNum
+        while self.seqNum < initialSeqNum + self.filesize:
+            payload = self.payloads[int((self.seqNum - initialSeqNum) / self.mss)]
             header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
             if not self.timer.isRunning:
                 self.timer.start()
