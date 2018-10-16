@@ -14,5 +14,5 @@ class PLD:
     def checkDrop(self):
         if random.random() < self.pDrop:
             return True
-        else:
-            return False
+        
+        return False
