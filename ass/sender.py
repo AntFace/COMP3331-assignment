@@ -5,6 +5,7 @@ import time
 from helper import *
 from logger import *
 from pld import *
+from timer import *
 
 class Sender:
     def __init__(self, receiverHost, receiverPort, filename, mws, mss, gamma, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed):
@@ -13,7 +14,6 @@ class Sender:
         self.filename = filename
         self.mws = mws
         self.mss = mss
-        self.gamma = gamma
 
         self.PLD = PLD(pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed)
 
@@ -25,11 +25,12 @@ class Sender:
         self.payloads = self._prepareFile()
 
         self.logger = Logger('Sender_log.txt')
+        self.timer = Timer(gamma=gamma)
 
         # Set up socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.connect((self.receiverHost, self.receiverPort))
-        self.socket.settimeout(1) # Set timeout to 1 for now
+        self.socket.settimeout(self.timer.getTimeoutInterval())
 
     def handshake(self): # three-way handshake (SYN, SYN+ACK, ACK)
         while True:
