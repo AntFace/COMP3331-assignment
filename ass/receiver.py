@@ -57,11 +57,11 @@ class Receiver:
                     del self.buffer[self.ackNum]
                     self._write(payload)
                     self.ackNum += len(payload)
-                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
             elif header.seqNum > self.ackNum:
                 self._addToBuffer(segment)
-                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
 
+            print('Sending ACK. Ack Num: {}'.format(self.ackNum))
+            responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
             self._send(address=address, header=responseHeader)
 
     def teardown(self, finAddress):
