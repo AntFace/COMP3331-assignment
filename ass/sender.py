@@ -56,26 +56,38 @@ class Sender:
 
     def sendFile(self):
         print('Sending file...')
-        initialSeqNum = self.seqNum
+        nextSeqNum = initialSeqNum = self.seqNum
         while self.seqNum < initialSeqNum + self.filesize:
-            payload = self.payloads[int((self.seqNum - initialSeqNum) / self.mss)]
-            header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
-            if not self.timer.isRunning:
-                self.timer.start()
-            self._send(header, payload, PLD=True)
-            expectedAckNum = self.seqNum + len(payload)
-            print('Sent segment. Seq num: {} Expected ACK: {}'.format(self.seqNum, expectedAckNum))
-            try:
-                response = self._receive()
-                print('Received response. ACK num: {}'.format(response.header.ackNum))
-                responseHeader = response.header
-                if responseHeader.ackNum == expectedAckNum:
-                    self.timer.stop()
-                    self._updateTimeout()
-                self.seqNum = responseHeader.ackNum
-            except socket.timeout:
-                print('Timed out!')
-                pass
+            if nextSeqNum - initialSeqNum < self.filesize:
+                payload = self.payloads[nextSeqNum - initialSeqNum]
+            else:
+                payload = None
+            if payload and nextSeqNum + len(payload) - self.seqNum <= self.mws:
+                header = Header(seqNum=nextSeqNum, ackNum=self.ackNum)
+                if not self.timer.isRunning:
+                    self.timer.start()
+                self._send(header=header, payload=payload, PLD=True)
+                print('Sent Segment. Seq num: {}'.format(header.seqNum))
+                nextSeqNum += len(payload)
+            else:
+                try:
+                    response = self._receive()
+                except socket.timeout:
+                    print('Timed out!')
+                    self.timer.discard()
+                    header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
+                    payload = self.payloads[self.seqNum - initialSeqNum]
+                    self._send(header=header, payload=payload, event='snd/RXT/timeout', PLD=True)
+                    print('Re-sent Segment. Seq num: {}'.format(header.seqNum))
+                    self.timer.start()
+                else:
+                    responseHeader = response.header
+                    print('Received response. ACK num: {}'.format(responseHeader.ackNum))
+                    if responseHeader.ackNum > self.seqNum:
+                        self.seqNum = responseHeader.ackNum
+                        if self.timer.isRunning:
+                            self.timer.stop()
+                            self._updateTimeout()
 
     def teardown(self):
         print('Teardown...')
@@ -118,15 +130,25 @@ class Sender:
         with open(self.filename, mode='rb') as f:
             content = f.read()
         self.filesize = len(content)
+        payloads = {}
+        numPayloads = int(self.filesize / self.mss)
+        if self.filesize % self.mss != 0:
+            numPayloads += 1
+        for i in range(0, numPayloads):
+            payloads[i * self.mss] = content[self.mss * i : self.mss * (i + 1)]
 
-        return [content[self.mss * i:self.mss * (i + 1)] for i in range(0, int(self.filesize / self.mss + 1))]
+        return payloads
 
-    def _send(self, header=None, payload=None, PLD=False):
+    def _send(self, header=None, payload=None, event='snd', PLD=False):
         segment = Segment(header, payload)
         if PLD:
             if self.PLD.checkDrop():
-                return self.logger.log('drop', segment)
-        self.logger.log('snd', segment)
+                print('Dropping! Seq num: {}'.format(header.seqNum))
+                if event == 'snd':
+                    return self.logger.log('drop', segment)
+                elif event == 'snd/RXT/timeout':
+                    return self.logger.log('drop/RXT/timeout', segment)
+        self.logger.log(event, segment)
 
         return self.socket.send(segment.encode())
 

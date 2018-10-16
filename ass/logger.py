@@ -16,7 +16,6 @@ class Logger:
         self.segmentsDelayed = 0
         self.timeoutRetransmissions = 0
         self.fastRetransmissions = 0
-        self.dupACKsReceived = 0
 
         # Receiver Final Statistics
         self.receivedFilesize = 0
@@ -24,8 +23,12 @@ class Logger:
         self.dataSegmentsReceived = 0
         self.bitErrorsReceived = 0
         self.duplicatesReceived = 0
-        self.dupACKsSent = 0
-        
+
+        # Shared Final Statistics
+        self.duplicateACKs = 0
+
+        # Keeps track of previous ACKs to detect duplicates
+        self.previousACKs = set()
 
     def log(self, event, segment):
         # Update final statistics
@@ -33,6 +36,12 @@ class Logger:
             self.segmentsTransmitted += 1
             if segment.payload:
                 self.sentFilesize += len(segment.payload)
+        elif event == 'snd/RXT/timeout':
+            self.segmentsTransmitted += 1
+            self.timeoutRetransmissions += 1
+            if segment.payload:
+                self.sentFilesize += len(segment.payload)
+            event = 'snd/RXT'
         elif event == 'rcv':
             self.totalSegmentsReceived += 1
             if segment.payload:
@@ -41,6 +50,11 @@ class Logger:
         elif event == 'drop':
             self.segmentsTransmitted += 1
             self.segmentsDropped += 1
+        elif event == 'drop/RXT/timeout':
+            self.segmentsTransmitted += 1
+            self.segmentsDropped += 1
+            self.timeoutRetransmissions += 1
+            event = 'drop'
 
         # Calculate time
         logTime = time.time() - self.startTime
@@ -55,6 +69,11 @@ class Logger:
             packetType = 'S'
         elif segment.header.ack:
             packetType = 'A'
+            if segment.header.ackNum in self.previousACKs:
+                self.duplicateACKs += 1
+                event += '/DA'
+            else:
+                self.previousACKs.add(segment.header.ackNum)
         elif segment.header.fin:
             packetType = 'F'
         else:
@@ -94,14 +113,14 @@ class Logger:
             final += '{0:<50} {1:>10}\n'.format('Number of Segments Delayed', self.segmentsDelayed)
             final += '{0:<50} {1:>10}\n'.format('Number of Retransmissions due to Timeout', self.timeoutRetransmissions)
             final += '{0:<50} {1:>10}\n'.format('Number of Fast Retransmissions', self.fastRetransmissions)
-            final += '{0:<50} {1:>10}\n'.format('Number of Duplicate ACKs received', self.dupACKsReceived)
+            final += '{0:<50} {1:>10}\n'.format('Number of Duplicate ACKs received', self.duplicateACKs)
         else:
             final = '{0:<50} {1:>10}\n'.format('Amount of Data Received (in Bytes)', self.receivedFilesize)
             final += '{0:<50} {1:>10}\n'.format('Total Segments Received', self.totalSegmentsReceived)
             final += '{0:<50} {1:>10}\n'.format('Data Segments Received', self.dataSegmentsReceived)
             final += '{0:<50} {1:>10}\n'.format('Data Segments with Bit Errors', self.bitErrorsReceived)
             final += '{0:<50} {1:>10}\n'.format('Duplicate Data Segments Received', self.duplicatesReceived)
-            final += '{0:<50} {1:>10}\n'.format('Duplicate ACKs sent', self.dupACKsSent)
+            final += '{0:<50} {1:>10}\n'.format('Duplicate ACKs sent', self.duplicateACKs)
         final = '\n===== Final Statistics =====\n' + final
         with open(self.filename, 'a') as f:
             return f.write(final)
