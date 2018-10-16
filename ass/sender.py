@@ -149,9 +149,10 @@ class Sender:
             if self.PLD.checkDrop():
                 print('Dropping! Seq num: {}'.format(header.seqNum))
                 return self.logger.log('drop', segment)
-        self.logger.log(event, segment)
+        
+        self.socket.send(segment.encode())
 
-        return self.socket.send(segment.encode())
+        return self.logger.log(event, segment)
 
     def _receive(self):
         response = decode(self.socket.recv(4096))
