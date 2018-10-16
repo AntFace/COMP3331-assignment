@@ -64,8 +64,6 @@ class Sender:
                 payload = None
             if payload and nextSeqNum + len(payload) - self.seqNum <= self.mws:
                 header = Header(seqNum=nextSeqNum, ackNum=self.ackNum)
-                if not self.timer.isRunning:
-                    self.timer.start()
                 self._send(header=header, payload=payload, PLD=True)
                 print('Sent Segment. Seq num: {}'.format(header.seqNum))
                 nextSeqNum += len(payload)
@@ -74,20 +72,15 @@ class Sender:
                     response = self._receive()
                 except socket.timeout:
                     print('Timed out!')
-                    self.timer.discard()
                     header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
                     payload = self.payloads[self.seqNum - initialSeqNum]
                     self._send(header=header, payload=payload, event='snd/RXT/timeout', PLD=True)
                     print('Re-sent Segment. Seq num: {}'.format(header.seqNum))
-                    self.timer.start()
                 else:
                     responseHeader = response.header
                     print('Received response. ACK num: {}'.format(responseHeader.ackNum))
                     if responseHeader.ackNum > self.seqNum:
                         self.seqNum = responseHeader.ackNum
-                        if self.timer.isRunning:
-                            self.timer.stop()
-                            self._updateTimeout()
 
     def teardown(self):
         print('Teardown...')
