@@ -60,12 +60,12 @@ class Logger:
             self.segmentsTransmitted += 1
             self.segmentsDropped += 1
             self.timeoutRetransmissions += 1
-            event = 'drop'
+            event = 'drop/RXT'
         elif event == 'drop/RXT/fast':
             self.segmentsTransmitted += 1
             self.segmentsDropped += 1
             self.fastRetransmissions += 1
-            event = 'drop'
+            event = 'drop/RXT'
 
         # Calculate time
         logTime = time.time() - self.startTime
