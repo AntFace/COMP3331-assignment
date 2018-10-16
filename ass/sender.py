@@ -148,12 +148,7 @@ class Sender:
         if PLD:
             if self.PLD.checkDrop():
                 print('Dropping! Seq num: {}'.format(header.seqNum))
-                if event == 'snd':
-                    return self.logger.log('drop', segment)
-                elif event == 'snd/RXT/timeout':
-                    return self.logger.log('drop/RXT/timeout', segment)
-                elif event == 'snd/RXT/fast':
-                    return self.logger.log('drop/RXT/fast', segment)
+                return self.logger.log('drop', segment)
         self.logger.log(event, segment)
 
         return self.socket.send(segment.encode())
