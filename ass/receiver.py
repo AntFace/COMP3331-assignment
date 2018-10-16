@@ -43,26 +43,30 @@ class Receiver:
 
     def receiveFile(self):
         while True:
-            segment, address = self._receive()
-            header = segment.header
-            payload = segment.payload
-            print('Received segment. Segment Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=segment.header.seqNum, ackNum=self.ackNum))
-            if header.fin:
-                return self.teardown(finAddress=address)
-            elif header.seqNum == self.ackNum:
-                self._write(payload)
-                self.ackNum += len(payload)
-                while self.ackNum in self.buffer:
-                    payload = self.buffer[self.ackNum]
-                    del self.buffer[self.ackNum]
+            try:
+                segment, address = self._receive()
+            except TypeError as e:
+                continue
+            else:
+                header = segment.header
+                payload = segment.payload
+                print('Received segment. Segment Seq Num: {seqNum} Receiver Ack Num: {ackNum}'.format(seqNum=segment.header.seqNum, ackNum=self.ackNum))
+                if header.fin:
+                    return self.teardown(finAddress=address)
+                elif header.seqNum == self.ackNum:
                     self._write(payload)
                     self.ackNum += len(payload)
-            elif header.seqNum > self.ackNum:
-                self._addToBuffer(segment)
+                    while self.ackNum in self.buffer:
+                        payload = self.buffer[self.ackNum]
+                        del self.buffer[self.ackNum]
+                        self._write(payload)
+                        self.ackNum += len(payload)
+                elif header.seqNum > self.ackNum:
+                    self._addToBuffer(segment)
 
-            print('Sending ACK. Ack Num: {}'.format(self.ackNum))
-            responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
-            self._send(address=address, header=responseHeader)
+                print('Sending ACK. Ack Num: {}'.format(self.ackNum))
+                responseHeader = Header(seqNum = self.seqNum, ackNum=self.ackNum, ack=True)
+                self._send(address=address, header=responseHeader)
 
     def teardown(self, finAddress):
         while True:
@@ -93,14 +97,20 @@ class Receiver:
 
     def _send(self, address, header=None, payload=None):
         segment = Segment(header=header)
-        self.logger.log('snd', segment)
+        self.logger.log(originalEvent='snd', pldEvent=None, segment=segment)
 
         return self.socket.sendto(segment.encode(), address)
 
     def _receive(self):
         segment, address = self.socket.recvfrom(4096)
         segment = decode(segment)
-        self.logger.log('rcv', segment)
+        if segment.header.seqNum < self.ackNum or segment.header.seqNum in self.buffer:
+            print('Duplicate received. Discarded!')
+            self.logger.log(originalEvent='rcv', pldEvent='dup', segment=segment)
+
+            return None
+
+        self.logger.log(originalEvent='rcv', pldEvent=None, segment=segment)
 
         return (segment, address)
 

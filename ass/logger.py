@@ -30,42 +30,51 @@ class Logger:
         # Keeps track of previous ACKs to detect duplicates
         self.previousACKs = set()
 
-    def log(self, event, segment):
-        # Update final statistics
-        if event == 'snd':
+    def log(self, originalEvent, pldEvent, segment):
+        # Generate event and calculate/correct final statistics
+        if originalEvent == 'snd':
+            event = originalEvent
             self.segmentsTransmitted += 1
             if segment.payload:
+                self.segmentsHandledByPLD += 1
                 self.sentFilesize += len(segment.payload)
-        elif event == 'snd/RXT/timeout':
+        elif originalEvent == 'timeoutRXT':
+            event = 'snd/RXT'
             self.segmentsTransmitted += 1
+            self.segmentsHandledByPLD += 1
             self.timeoutRetransmissions += 1
-            if segment.payload:
-                self.sentFilesize += len(segment.payload)
+            self.sentFilesize += len(segment.payload)
+        elif originalEvent == 'fastRXT':
             event = 'snd/RXT'
-        elif event == 'snd/RXT/fast':
             self.segmentsTransmitted += 1
+            self.segmentsHandledByPLD += 1
             self.fastRetransmissions += 1
-            if segment.payload:
-                self.sentFilesize += len(segment.payload)
-            event = 'snd/RXT'
-        elif event == 'rcv':
+            self.sentFilesize += len(segment.payload)
+        elif originalEvent == 'rcv':
+            event = originalEvent
             self.totalSegmentsReceived += 1
             if segment.payload:
                 self.dataSegmentsReceived += 1
                 self.receivedFilesize += len(segment.payload)
-        elif event == 'drop':
-            self.segmentsTransmitted += 1
+
+        if pldEvent == 'drop':
+            event = event.replace('snd', 'drop')
             self.segmentsDropped += 1
-        elif event == 'drop/RXT/timeout':
-            self.segmentsTransmitted += 1
-            self.segmentsDropped += 1
-            self.timeoutRetransmissions += 1
-            event = 'drop/RXT'
-        elif event == 'drop/RXT/fast':
-            self.segmentsTransmitted += 1
-            self.segmentsDropped += 1
-            self.fastRetransmissions += 1
-            event = 'drop/RXT'
+            self.sentFilesize -= len(segment.payload)
+        elif pldEvent == 'dup':
+            event += '/dup'
+            self.segmentsTransmitted -= 1
+            self.segmentsHandledByPLD -= 1
+            self.totalSegmentsReceived -= 1
+            self.dataSegmentsReceived -= 1
+            self.segmentsDuplicated += 1
+            self.duplicatesReceived += 1
+            self.sentFilesize -= len(segment.payload)
+            self.receivedFilesize -= len(segment.payload)
+            if originalEvent == 'timeoutRXT':
+                self.timeoutRetransmissions -= 1
+            elif originalEvent == 'fastRXT':
+                self.fastRetransmissions -= 1
 
         # Calculate time
         logTime = time.time() - self.startTime
@@ -73,7 +82,6 @@ class Logger:
         # Generate packetType
         if segment.payload:
             packetType = 'D'
-            self.segmentsHandledByPLD += 1
         elif segment.header.syn and segment.header.ack:
             packetType = 'SA'
         elif segment.header.syn:
@@ -103,7 +111,7 @@ class Logger:
         ackNum = segment.header.ackNum
 
         # Generate log string
-        logString = '{0:<10} {1:>10.2f} {2:^10} {3:>10} {4:>10} {5:>10}\n'.format(event, logTime, packetType, seqNum, payloadLength, ackNum)
+        logString = '{0:<20} {1:>10.2f} {2:^10} {3:>10} {4:>10} {5:>10}\n'.format(event, logTime, packetType, seqNum, payloadLength, ackNum)
 
         if seqNum == 0 and ackNum == 0:
             with open(self.filename, 'w') as f:

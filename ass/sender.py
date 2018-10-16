@@ -76,7 +76,7 @@ class Sender:
                     header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
                     payload = self.payloads[self.seqNum - initialSeqNum]
                     print('Seq num: {} resending...'.format(header.seqNum))
-                    self._send(header=header, payload=payload, event='snd/RXT/timeout', PLD=True)
+                    self._send(header=header, payload=payload, event='timeoutRXT', PLD=True)
                 else:
                     responseHeader = response.header
                     print('Received response. ACK num: {}'.format(responseHeader.ackNum))
@@ -91,7 +91,7 @@ class Sender:
                             header = Header(seqNum=self.seqNum, ackNum = self.ackNum)
                             payload = self.payloads[self.seqNum - initialSeqNum]
                             print('Seq num: {} resending...'.format(header.seqNum))
-                            self._send(header=header, payload=payload, event='snd/RXT/fast', PLD=True)
+                            self._send(header=header, payload=payload, event='fastRXT', PLD=True)
 
     def teardown(self):
         print('Teardown...')
@@ -149,16 +149,23 @@ class Sender:
             if self.PLD.checkDrop():
                 print('DROPPED! Seq num: {}'.format(header.seqNum)) 
 
-                return self.logger.log('drop', segment)
+                return self.logger.log(originalEvent=event, pldEvent='drop', segment=segment)
+            elif self.PLD.checkDuplicate():
+                print('DUPLICATED! Seq num: {}'.format(header.seqNum))
+                self.socket.send(segment.encode())
+                self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
+                self.socket.send(segment.encode())
+
+                return self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
         
         print('SENT! Seq num: {}'.format(header.seqNum))
         self.socket.send(segment.encode())
 
-        return self.logger.log(event, segment)
+        return self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
 
     def _receive(self):
         response = decode(self.socket.recv(4096))
-        self.logger.log('rcv', response)
+        self.logger.log(originalEvent='rcv', pldEvent=None, segment=response)
 
         return response
 

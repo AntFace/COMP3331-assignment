@@ -16,3 +16,9 @@ class PLD:
             return True
         
         return False
+
+    def checkDuplicate(self):
+        if random.random() < self.pDuplicate:
+            return True
+
+        return False
