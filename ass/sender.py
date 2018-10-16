@@ -65,8 +65,8 @@ class Sender:
                 payload = None
             if payload and nextSeqNum + len(payload) - self.seqNum <= self.mws:
                 header = Header(seqNum=nextSeqNum, ackNum=self.ackNum)
+                print('Seq num: {} sending...'.format(header.seqNum))
                 self._send(header=header, payload=payload, PLD=True)
-                print('Sent Segment. Seq num: {}'.format(header.seqNum))
                 nextSeqNum += len(payload)
             else:
                 try:
@@ -75,8 +75,8 @@ class Sender:
                     print('Timed out!')
                     header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
                     payload = self.payloads[self.seqNum - initialSeqNum]
+                    print('Seq num: {} resending...'.format(header.seqNum))
                     self._send(header=header, payload=payload, event='snd/RXT/timeout', PLD=True)
-                    print('Re-sent Segment. Seq num: {}'.format(header.seqNum))
                 else:
                     responseHeader = response.header
                     print('Received response. ACK num: {}'.format(responseHeader.ackNum))
@@ -90,8 +90,8 @@ class Sender:
                             duplicateACK = 0
                             header = Header(seqNum=self.seqNum, ackNum = self.ackNum)
                             payload = self.payloads[self.seqNum - initialSeqNum]
+                            print('Seq num: {} resending...'.format(header.seqNum))
                             self._send(header=header, payload=payload, event='snd/RXT/fast', PLD=True)
-                            print('Re-sent Segment. Seq num: {}'.format(header.seqNum))
 
     def teardown(self):
         print('Teardown...')
@@ -147,9 +147,11 @@ class Sender:
         segment = Segment(header, payload)
         if PLD:
             if self.PLD.checkDrop():
-                print('Dropping! Seq num: {}'.format(header.seqNum))
+                print('DROPPED! Seq num: {}'.format(header.seqNum)) 
+
                 return self.logger.log('drop', segment)
         
+        print('SENT! Seq num: {}'.format(header.seqNum))
         self.socket.send(segment.encode())
 
         return self.logger.log(event, segment)
