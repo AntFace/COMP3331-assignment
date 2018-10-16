@@ -1,6 +1,5 @@
 import socket
 import sys
-import time
 
 from helper import *
 from logger import *
