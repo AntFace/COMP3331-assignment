@@ -14,21 +14,46 @@ class State(Enum):
     LAST_ACK = 9
 
 class Header:
-    def __init__(self, seqNum=0, ackNum=0, checksum=0, ack=False, syn=False, fin=False):
+    def __init__(self, seqNum=0, ackNum=0, ack=False, syn=False, fin=False):
         self.seqNum = seqNum
         self.ackNum = ackNum
-        self.checksum = checksum
         self.ack = ack
         self.syn = syn
         self.fin = fin
+        
+        self.checksum = 0
 
 class Segment:
     def __init__(self, header, payload=None):
         self.header = header
         self.payload = payload
+        if self.payload:
+            self._generateChecksum()
 
     def __lt__(self, other):
         return self.header.seqNum < other.header.seqNum
 
     def __eq__(self, other):
         return self.header.seqNum == other.header.seqNum
+
+    # Sets checksum as one's complement of calculated checksum
+    def _generateChecksum(self):
+        self.header.checksum = getChecksum(self.payload) ^ 0xffff
+        
+# Functions
+def getChecksum(payload):
+    length = len(payload)
+
+    # If odd number of bytes, add last byte first, right-padded with 0's
+    if length % 2 != 0:
+        length -= 1
+        checksum = payload[length] << 8
+    else:
+        checksum = 0
+
+    # Treat every two bytes as one 16-bit value and add to checksum
+    for i in range(0, length, 2):
+        checksum += (payload[i] << 8) + payload[i + 1]
+        checksum = checksum + (checksum >> 16)
+
+    return checksum
