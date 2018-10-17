@@ -74,6 +74,15 @@ class Logger:
             else:
                 self.duplicatesReceived += 1
                 self.receivedFilesize -= len(segment.payload)
+        elif pldEvent == 'corr':
+            event += '/corr'
+            if originalEvent in sendEvents:
+                self.segmentsCorrupted += 1
+                self.sentFilesize -= len(segment.payload)
+            else:
+                self.bitErrorsReceived += 1
+                self.receivedFilesize -= len(segment.payload)
+
 
         # Calculate time
         logTime = time.time() - self.startTime
