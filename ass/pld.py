@@ -44,6 +44,7 @@ class PLD:
             return self._checkReorderedSegment()
         elif self._checkReorder():
             print('REORDERING! Seq num: {}'.format(header.seqNum))
+
             return self._reorderSegment(segment, event)
         else:
             self.socket.send(pickle.dumps(segment))
