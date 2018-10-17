@@ -32,6 +32,7 @@ class Logger:
 
     def log(self, originalEvent, pldEvent, segment):
         # Generate event and calculate/correct final statistics
+        sendEvents = ['snd', 'timeoutRXT', 'fastRXT']
         if originalEvent == 'snd':
             event = originalEvent
             self.segmentsTransmitted += 1
@@ -63,18 +64,16 @@ class Logger:
             self.sentFilesize -= len(segment.payload)
         elif pldEvent == 'dup':
             event += '/dup'
-            self.segmentsTransmitted -= 1
-            self.segmentsHandledByPLD -= 1
-            self.totalSegmentsReceived -= 1
-            self.dataSegmentsReceived -= 1
-            self.segmentsDuplicated += 1
-            self.duplicatesReceived += 1
-            self.sentFilesize -= len(segment.payload)
-            self.receivedFilesize -= len(segment.payload)
-            if originalEvent == 'timeoutRXT':
-                self.timeoutRetransmissions -= 1
-            elif originalEvent == 'fastRXT':
-                self.fastRetransmissions -= 1
+            if originalEvent in sendEvents:
+                self.segmentsDuplicated += 1
+                self.sentFilesize -= len(segment.payload)
+                if originalEvent == 'timeoutRXT':
+                    self.timeoutRetransmissions -= 1
+                elif originalEvent == 'fastRXT':
+                    self.fastRetransmissions -= 1
+            else:
+                self.duplicatesReceived += 1
+                self.receivedFilesize -= len(segment.payload)
 
         # Calculate time
         logTime = time.time() - self.startTime
