@@ -158,6 +158,12 @@ class Sender:
                 self.socket.send(pickle.dumps(segment))
 
                 return self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
+            elif self.PLD.checkCorrupt():
+                print('CORRUPTED! Seq num: {}'.format(header.seqNum))
+                segment = self.PLD.corruptSegment(segment)
+                self.socket.send(pickle.dumps(segment))
+
+                return self.logger.log(originalEvent=event, pldEvent='corr', segment=segment)
         
         print('SENT! Seq num: {}'.format(header.seqNum))
         self.socket.send(pickle.dumps(segment))
