@@ -82,6 +82,9 @@ class Logger:
             else:
                 self.bitErrorsReceived += 1
                 self.receivedFilesize -= len(segment.payload)
+        elif pldEvent == 'rord':
+            event += '/rord'
+            self.segmentsReordered += 1
 
 
         # Calculate time

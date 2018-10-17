@@ -18,6 +18,9 @@ class PLD:
         self.socket = socket
         self.logger = logger
 
+        self.reorderedSegment = None
+        self.numReorderedSent = 0
+
     def send(self, header, payload, event):
         segment = Segment(header, payload)
         if self.checkDrop():
@@ -29,19 +32,25 @@ class PLD:
             self.socket.send(pickle.dumps(segment))
             self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
             self.socket.send(pickle.dumps(segment))
+            self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
 
-            return self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
+            return self.checkReorderedSegment()
         elif self.checkCorrupt():
             print('CORRUPTED! Seq num: {}'.format(header.seqNum))
             segment = self.corruptSegment(segment)
             self.socket.send(pickle.dumps(segment))
+            self.logger.log(originalEvent=event, pldEvent='corr', segment=segment)
 
-            return self.logger.log(originalEvent=event, pldEvent='corr', segment=segment)
+            return self.checkReorderedSegment()
+        elif self.checkReorder():
+            print('REORDERING! Seq num: {}'.format(header.seqNum))
+            return self.reorderSegment(segment, event)
         else:
             self.socket.send(pickle.dumps(segment))
             print('SENT! Seq num: {}'.format(header.seqNum))
+            self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
 
-            return self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
+            return self.checkReorderedSegment()
 
     def checkDrop(self):
         return True if random.random() < self.pDrop else False
@@ -58,3 +67,27 @@ class PLD:
         segment.payload = corruptPayload
 
         return segment
+
+    def checkReorder(self):
+        if self.reorderedSegment is None:
+            return True if random.random() < self.pOrder else False
+        else:
+            return False
+
+    def reorderSegment(self, segment, event):
+        self.reorderedSegment = (segment, event)
+
+    def checkReorderedSegment(self):
+        if self.reorderedSegment is None:
+            return
+        else:
+            self.numReorderedSent += 1
+            if self.numReorderedSent == self.maxOrder:
+                segment = self.reorderedSegment[0]
+                event = self.reorderedSegment[1]
+                print('REORDERED! Seq num: {}'.format(segment.header.seqNum))
+                self.socket.send(pickle.dumps(segment))
+                self.reorderedSegment = None
+                self.numReorderedSent = 0
+
+                return self.logger.log(originalEvent=event, pldEvent='rord', segment=segment)
