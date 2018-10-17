@@ -12,13 +12,7 @@ class PLD:
         random.seed(seed)
 
     def checkDrop(self):
-        if random.random() < self.pDrop:
-            return True
-        
-        return False
+        return True if random.random() < self.pDrop else False
 
     def checkDuplicate(self):
-        if random.random() < self.pDuplicate:
-            return True
-
-        return False
+        return True if random.random() < self.pDuplicate else False
