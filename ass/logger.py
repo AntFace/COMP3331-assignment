@@ -85,6 +85,9 @@ class Logger:
         elif pldEvent == 'rord':
             event += '/rord'
             self.segmentsReordered += 1
+        elif pldEvent == 'dely':
+            event += '/dely'
+            self.segmentsDelayed += 1
 
 
         # Calculate time

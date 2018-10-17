@@ -120,6 +120,7 @@ class Sender:
                     print('ACK sent')
                     self.state = State.TIME_WAIT
             elif self.state == State.TIME_WAIT:
+                self.PLD.shutdown()
                 self.logger.logFinal(sender=True)
                 print('Waiting 10 seconds...')
                 time.sleep(10)

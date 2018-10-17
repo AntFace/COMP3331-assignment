@@ -1,6 +1,8 @@
 import pickle
 import random
 import sys
+import threading
+import time
 
 from helper import *
 
@@ -20,6 +22,8 @@ class PLD:
 
         self.reorderedSegment = None
         self.numReorderedSent = 0
+
+        self.isAlive = True
 
     def send(self, header, payload, event):
         segment = Segment(header, payload)
@@ -46,12 +50,20 @@ class PLD:
             print('REORDERING! Seq num: {}'.format(header.seqNum))
 
             return self._reorderSegment(segment, event)
+        elif self._checkDelay():
+            print('DELAYING! Seq num: {}'.format(header.seqNum))
+
+            thread = threading.Thread(target=self._delaySegment, args=(segment, event))
+            return thread.start()
         else:
             self.socket.send(pickle.dumps(segment))
             print('SENT! Seq num: {}'.format(header.seqNum))
             self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
 
             return self._checkReorderedSegment()
+
+    def shutdown(self):
+        self.isAlive = False
 
     def _checkDrop(self):
         return random.random() < self.pDrop if self.pDrop > 0 else False
@@ -89,3 +101,15 @@ class PLD:
                 self.numReorderedSent = 0
 
                 return self.logger.log(originalEvent=event, pldEvent='rord', segment=segment)
+
+    def _checkDelay(self):
+        return random.random() < self.pDelay if self.pDelay > 0 else False
+
+    def _delaySegment(self, segment, event):
+        time.sleep(random.randint(0, self.maxDelay + 1) / 1000)
+        if self.isAlive:
+            print('SENDING DELAYED! Seq num: {}'.format(segment.header.seqNum))
+            self.socket.send(pickle.dumps(segment))
+            self.logger.log(originalEvent=event, pldEvent='dely', segment=segment)
+
+            return self._checkReorderedSegment()
