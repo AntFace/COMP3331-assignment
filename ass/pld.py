@@ -82,7 +82,7 @@ class PLD:
             if self.numReorderedSent == self.maxOrder:
                 segment = self.reorderedSegment[0]
                 event = self.reorderedSegment[1]
-                print('REORDERED! Seq num: {}'.format(segment.header.seqNum))
+                print('SENDING REORDERED! Seq num: {}'.format(segment.header.seqNum))
                 self.socket.send(pickle.dumps(segment))
                 self.reorderedSegment = None
                 self.numReorderedSent = 0
