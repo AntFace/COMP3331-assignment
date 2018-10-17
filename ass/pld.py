@@ -53,13 +53,13 @@ class PLD:
             return self._checkReorderedSegment()
 
     def _checkDrop(self):
-        return True if random.random() < self.pDrop else False
+        return random.random() < self.pDrop if self.pDrop > 0 else False
 
     def _checkDuplicate(self):
-        return True if random.random() < self.pDuplicate else False
+        return random.random() < self.pDuplicate if self.pDuplicate > 0 else False
 
     def _checkCorrupt(self):
-        return True if random.random() < self.pCorrupt else False
+        return random.random() < self.pCorrupt if self.pCorrupt > 0 else False
 
     def _corruptSegment(self, segment):
         byteToCorrupt = random.randint(0, len(segment.payload) - 1)
@@ -69,10 +69,7 @@ class PLD:
         return segment
 
     def _checkReorder(self):
-        if self.reorderedSegment is None:
-            return True if random.random() < self.pOrder else False
-        else:
-            return False
+        return random.random() < self.pOrder if self.pOrder > 0 and self.reorderedSegment is None else False
 
     def _reorderSegment(self, segment, event):
         self.reorderedSegment = (segment, event)
