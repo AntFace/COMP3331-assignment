@@ -105,6 +105,12 @@ class Receiver:
     def _receive(self):
         segment, address = self.socket.recvfrom(4096)
         segment = pickle.loads(segment)
+        # if payload exists, check if sum of checksum in header and 16-bit data in payload is 0xffff
+        if segment.payload and (segment.header.checksum ^ getChecksum(segment.payload)) != 0xffff:
+            print('Corrupt segment received. Discarded!')
+            self.logger.log(originalEvent='rcv', pldEvent='corr', segment=segment)
+
+            return None
         if segment.header.seqNum < self.ackNum or segment.header.seqNum in self.buffer:
             print('Duplicate received. Discarded!')
             self.logger.log(originalEvent='rcv', pldEvent='dup', segment=segment)
