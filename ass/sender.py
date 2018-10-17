@@ -16,8 +16,6 @@ class Sender:
         self.mws = mws
         self.mss = mss
 
-        self.PLD = PLD(pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed)
-
         self.state = State.CLOSED
         self.seqNum = 0
         self.ackNum = 0
@@ -32,6 +30,8 @@ class Sender:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.connect((self.receiverHost, self.receiverPort))
         self.socket.settimeout(self.timer.getTimeoutInterval())
+
+        self.PLD = PLD(pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed, self.socket, self.logger)
 
     def handshake(self): # three-way handshake (SYN, SYN+ACK, ACK)
         while True:
@@ -145,30 +145,14 @@ class Sender:
         return payloads
 
     def _send(self, header=None, payload=None, event='snd', PLD=False):
-        segment = Segment(header, payload)
         if PLD:
-            if self.PLD.checkDrop():
-                print('DROPPED! Seq num: {}'.format(header.seqNum)) 
+            return self.PLD.send(header=header, payload=payload, event=event)
+        else:
+            segment = Segment(header, payload)
+            self.socket.send(pickle.dumps(segment))
+            print('SENT! Seq num: {}'.format(header.seqNum))
 
-                return self.logger.log(originalEvent=event, pldEvent='drop', segment=segment)
-            elif self.PLD.checkDuplicate():
-                print('DUPLICATED! Seq num: {}'.format(header.seqNum))
-                self.socket.send(pickle.dumps(segment))
-                self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
-                self.socket.send(pickle.dumps(segment))
-
-                return self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
-            elif self.PLD.checkCorrupt():
-                print('CORRUPTED! Seq num: {}'.format(header.seqNum))
-                segment = self.PLD.corruptSegment(segment)
-                self.socket.send(pickle.dumps(segment))
-
-                return self.logger.log(originalEvent=event, pldEvent='corr', segment=segment)
-        
-        print('SENT! Seq num: {}'.format(header.seqNum))
-        self.socket.send(pickle.dumps(segment))
-
-        return self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
+            return self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
 
     def _receive(self):
         response = pickle.loads(self.socket.recv(4096))
