@@ -22,16 +22,6 @@ class Header:
         self.syn = syn
         self.fin = fin
 
-    def encode(self):
-        bits = '{0:032b}'.format(self.seqNum)
-        bits += '{0:032b}'.format(self.ackNum)
-        bits += '{0:016b}'.format(self.checksum)
-        bits += '{0:01b}'.format(self.ack)
-        bits += '{0:01b}'.format(self.syn)
-        bits += '{0:01b}'.format(self.fin)
-        
-        return bits.encode()
-
 class Segment:
     def __init__(self, header, payload=None):
         self.header = header
@@ -42,24 +32,3 @@ class Segment:
 
     def __eq__(self, other):
         return self.header.seqNum == other.header.seqNum
-
-    def encode(self):
-        if self.payload:
-            return self.header.encode() + self.payload
-        else:
-            return self.header.encode()
-
-# Functions
-def decode(encodedSegment):
-    seqNum = int(encodedSegment[0:32], 2)
-    ackNum = int(encodedSegment[32:64], 2)
-    checksum = int(encodedSegment[64:80], 2)
-    ack = int(encodedSegment[80:81], 2)
-    syn = int(encodedSegment[81:82], 2)
-    fin = int(encodedSegment[82:83], 2)
-
-    header = Header(seqNum, ackNum, checksum, ack, syn, fin)
-
-    payload = encodedSegment[83:]
-    
-    return Segment(header, payload)

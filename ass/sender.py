@@ -1,3 +1,4 @@
+import pickle
 import socket
 import sys
 import time
@@ -152,19 +153,19 @@ class Sender:
                 return self.logger.log(originalEvent=event, pldEvent='drop', segment=segment)
             elif self.PLD.checkDuplicate():
                 print('DUPLICATED! Seq num: {}'.format(header.seqNum))
-                self.socket.send(segment.encode())
+                self.socket.send(pickle.dumps(segment))
                 self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
-                self.socket.send(segment.encode())
+                self.socket.send(pickle.dumps(segment))
 
                 return self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
         
         print('SENT! Seq num: {}'.format(header.seqNum))
-        self.socket.send(segment.encode())
+        self.socket.send(pickle.dumps(segment))
 
         return self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
 
     def _receive(self):
-        response = decode(self.socket.recv(4096))
+        response = pickle.loads(self.socket.recv(4096))
         self.logger.log(originalEvent='rcv', pldEvent=None, segment=response)
 
         return response

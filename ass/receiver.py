@@ -1,3 +1,4 @@
+import pickle
 import socket
 import sys
 
@@ -99,11 +100,11 @@ class Receiver:
         segment = Segment(header=header)
         self.logger.log(originalEvent='snd', pldEvent=None, segment=segment)
 
-        return self.socket.sendto(segment.encode(), address)
+        return self.socket.sendto(pickle.dumps(segment), address)
 
     def _receive(self):
         segment, address = self.socket.recvfrom(4096)
-        segment = decode(segment)
+        segment = pickle.loads(segment)
         if segment.header.seqNum < self.ackNum or segment.header.seqNum in self.buffer:
             print('Duplicate received. Discarded!')
             self.logger.log(originalEvent='rcv', pldEvent='dup', segment=segment)
