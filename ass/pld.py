@@ -23,61 +23,61 @@ class PLD:
 
     def send(self, header, payload, event):
         segment = Segment(header, payload)
-        if self.checkDrop():
+        if self._checkDrop():
             print('DROPPED! Seq num: {}'.format(header.seqNum))
             
             return self.logger.log(originalEvent=event, pldEvent='drop', segment=segment)
-        elif self.checkDuplicate():
+        elif self._checkDuplicate():
             print('DUPLICATED! Seq num: {}'.format(header.seqNum))
             self.socket.send(pickle.dumps(segment))
             self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
             self.socket.send(pickle.dumps(segment))
             self.logger.log(originalEvent=event, pldEvent='dup', segment=segment)
 
-            return self.checkReorderedSegment()
-        elif self.checkCorrupt():
+            return self._checkReorderedSegment()
+        elif self._checkCorrupt():
             print('CORRUPTED! Seq num: {}'.format(header.seqNum))
-            segment = self.corruptSegment(segment)
+            segment = self._corruptSegment(segment)
             self.socket.send(pickle.dumps(segment))
             self.logger.log(originalEvent=event, pldEvent='corr', segment=segment)
 
-            return self.checkReorderedSegment()
-        elif self.checkReorder():
+            return self._checkReorderedSegment()
+        elif self._checkReorder():
             print('REORDERING! Seq num: {}'.format(header.seqNum))
-            return self.reorderSegment(segment, event)
+            return self._reorderSegment(segment, event)
         else:
             self.socket.send(pickle.dumps(segment))
             print('SENT! Seq num: {}'.format(header.seqNum))
             self.logger.log(originalEvent=event, pldEvent=None, segment=segment)
 
-            return self.checkReorderedSegment()
+            return self._checkReorderedSegment()
 
-    def checkDrop(self):
+    def _checkDrop(self):
         return True if random.random() < self.pDrop else False
 
-    def checkDuplicate(self):
+    def _checkDuplicate(self):
         return True if random.random() < self.pDuplicate else False
 
-    def checkCorrupt(self):
+    def _checkCorrupt(self):
         return True if random.random() < self.pCorrupt else False
 
-    def corruptSegment(self, segment):
+    def _corruptSegment(self, segment):
         byteToCorrupt = random.randint(0, len(segment.payload) - 1)
         corruptPayload = segment.payload[0:byteToCorrupt] + (segment.payload[byteToCorrupt] ^ 1).to_bytes(length=1, byteorder=sys.byteorder) + segment.payload[(byteToCorrupt + 1):]
         segment.payload = corruptPayload
 
         return segment
 
-    def checkReorder(self):
+    def _checkReorder(self):
         if self.reorderedSegment is None:
             return True if random.random() < self.pOrder else False
         else:
             return False
 
-    def reorderSegment(self, segment, event):
+    def _reorderSegment(self, segment, event):
         self.reorderedSegment = (segment, event)
 
-    def checkReorderedSegment(self):
+    def _checkReorderedSegment(self):
         if self.reorderedSegment is None:
             return
         else:
