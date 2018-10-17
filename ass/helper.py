@@ -30,12 +30,6 @@ class Segment:
         if self.payload:
             self._generateChecksum()
 
-    def __lt__(self, other):
-        return self.header.seqNum < other.header.seqNum
-
-    def __eq__(self, other):
-        return self.header.seqNum == other.header.seqNum
-
     # Sets checksum as one's complement of calculated checksum
     def _generateChecksum(self):
         self.header.checksum = getChecksum(self.payload) ^ 0xffff
