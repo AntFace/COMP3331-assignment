@@ -29,7 +29,7 @@ class Sender:
         # Set up socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.connect((self.receiverHost, self.receiverPort))
-        self.socket.settimeout(self.timer.getTimeoutInterval())
+        self.socket.settimeout(0.1) # Set socket timeout as a prompt to check the Timer module's actual timeout
 
         self.PLD = PLD(pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed, self.socket, self.logger)
 
@@ -69,21 +69,25 @@ class Sender:
                 print('Seq num: {} sending...'.format(header.seqNum))
                 self._send(header=header, payload=payload, PLD=True)
                 nextSeqNum += len(payload)
+                self.timer.start(RXT=False, nextSeqNum=nextSeqNum)
             else:
                 try:
                     response = self._receive()
                 except socket.timeout:
-                    print('Timed out!')
-                    header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
-                    payload = self.payloads[self.seqNum - initialSeqNum]
-                    print('Seq num: {} resending...'.format(header.seqNum))
-                    self._send(header=header, payload=payload, event='timeoutRXT', PLD=True)
+                    if self.timer.timedOut:
+                        print('Timed out!')
+                        header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
+                        payload = self.payloads[self.seqNum - initialSeqNum]
+                        print('Seq num: {} resending...'.format(header.seqNum))
+                        self._send(header=header, payload=payload, event='timeoutRXT', PLD=True)
+                        self.timer.start(RXT=True)
                 else:
                     responseHeader = response.header
                     print('Received response. ACK num: {}'.format(responseHeader.ackNum))
                     if responseHeader.ackNum > self.seqNum:
                         duplicateACK = 0
                         self.seqNum = responseHeader.ackNum
+                        self.timer.update(self.seqNum)
                     else:
                         duplicateACK += 1
                         if duplicateACK == 3:
@@ -93,6 +97,7 @@ class Sender:
                             payload = self.payloads[self.seqNum - initialSeqNum]
                             print('Seq num: {} resending...'.format(header.seqNum))
                             self._send(header=header, payload=payload, event='fastRXT', PLD=True)
+                            self.timer.start(RXT=True)
 
     def teardown(self):
         print('Teardown...')
@@ -160,9 +165,6 @@ class Sender:
         self.logger.log(originalEvent='rcv', pldEvent=None, segment=response)
 
         return response
-
-    def _updateTimeout(self):
-        return self.socket.settimeout(self.timer.getTimeoutInterval())
 
 if __name__ == '__main__':
     if len(sys.argv) != 7 and len(sys.argv) != 15:
