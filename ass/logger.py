@@ -44,13 +44,11 @@ class Logger:
             self.segmentsTransmitted += 1
             self.segmentsHandledByPLD += 1
             self.timeoutRetransmissions += 1
-            self.sentFilesize += len(segment.payload)
         elif originalEvent == 'fastRXT':
             event = 'snd/RXT'
             self.segmentsTransmitted += 1
             self.segmentsHandledByPLD += 1
             self.fastRetransmissions += 1
-            self.sentFilesize += len(segment.payload)
         elif originalEvent == 'rcv':
             event = originalEvent
             self.totalSegmentsReceived += 1
@@ -61,12 +59,12 @@ class Logger:
         if pldEvent == 'drop':
             event = event.replace('snd', 'drop')
             self.segmentsDropped += 1
-            self.sentFilesize -= len(segment.payload)
         elif pldEvent == 'dup':
             event += '/dup'
             if originalEvent in sendEvents:
                 self.segmentsDuplicated += 1
-                self.sentFilesize -= len(segment.payload)
+                if originalEvent == 'snd':
+                    self.sentFilesize -= len(segment.payload)
                 if originalEvent == 'timeoutRXT':
                     self.timeoutRetransmissions -= 1
                 elif originalEvent == 'fastRXT':
@@ -78,7 +76,6 @@ class Logger:
             event += '/corr'
             if originalEvent in sendEvents:
                 self.segmentsCorrupted += 1
-                self.sentFilesize -= len(segment.payload)
             else:
                 self.bitErrorsReceived += 1
                 self.receivedFilesize -= len(segment.payload)
