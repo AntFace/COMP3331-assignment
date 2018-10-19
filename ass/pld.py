@@ -4,7 +4,11 @@ import sys
 import threading
 import time
 
+from collections import namedtuple
+
 from helper import *
+
+ReorderedSegment = namedtuple('ReorderedSegment', ['segment', 'event']) # Named tuple to track segment awaiting reordering
 
 class PLD:
     def __init__(self, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed, socket, logger):
@@ -97,9 +101,9 @@ class PLD:
             return
         else: # Increment number of segments sent
             self.numReorderedSent += 1
-            if self.numReorderedSent == self.maxOrder:
-                segment = self.reorderedSegment[0]
-                event = self.reorderedSegment[1]
+            if self.numReorderedSent == self.maxOrder: # If number of segments sent has reached maxOrder, send and log and reset reorderedSegment variables
+                segment = self.reorderedSegment.segment
+                event = self.reorderedSegment.event
                 print('SENDING REORDERED! Seq num: {}'.format(segment.header.seqNum))
                 self.socket.send(pickle.dumps(segment))
                 self.reorderedSegment = None
