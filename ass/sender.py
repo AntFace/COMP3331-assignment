@@ -174,7 +174,7 @@ class Sender:
         return response
 
 if __name__ == '__main__':
-    if len(sys.argv) != 7 and len(sys.argv) != 15:
+    if len(sys.argv) != 15:
         print ('Usage: python3 sender.py <receiver host> <receiver port> <filename> <maximum window size> <maximum segment size> <gamma> <drop probability> <duplicate probability> <corrupt probability> <reorder probability> <max reorder> <delay probability> <max delay time (milliseconds)> <seed>')
         sys.exit()
 
@@ -187,15 +187,14 @@ if __name__ == '__main__':
     gamma = int(sys.argv[6])
     
     #PLD module arguments
-    if len(sys.argv) == 15:
-        pDrop = float(sys.argv[7])
-        pDuplicate = float(sys.argv[8])
-        pCorrupt = float(sys.argv[9])
-        pOrder = float(sys.argv[10])
-        maxOrder = int(sys.argv[11])
-        pDelay = float(sys.argv[12])
-        maxDelay = int(sys.argv[13])
-        seed = int(sys.argv[14])
+    pDrop = float(sys.argv[7])
+    pDuplicate = float(sys.argv[8])
+    pCorrupt = float(sys.argv[9])
+    pOrder = float(sys.argv[10])
+    maxOrder = int(sys.argv[11])
+    pDelay = float(sys.argv[12])
+    maxDelay = int(sys.argv[13])
+    seed = int(sys.argv[14])
     
     sender = Sender(receiverHost, receiverPort, filename, mws, mss, gamma, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed)
     sender.handshake()
