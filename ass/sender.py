@@ -168,7 +168,7 @@ class Sender:
 
 if __name__ == '__main__':
     if len(sys.argv) != 7 and len(sys.argv) != 15:
-        print ('Incorrect number of arguments')
+        print ('Usage: python3 sender.py <receiver host> <receiver port> <filename> <maximum window size> <maximum segment size> <gamma> <drop probability> <duplicate probability> <corrupt probability> <reorder probability> <max reorder> <delay probability> <max delay time (milliseconds)> <seed>')
         sys.exit()
 
     receiverHost = sys.argv[1]

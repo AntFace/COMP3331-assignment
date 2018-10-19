@@ -137,7 +137,7 @@ class Receiver:
 
 if __name__ == '__main__':
     if len(sys.argv) != 3 or not sys.argv[1].isdigit():
-        sys.exit('Usage: python receiver.py <receiver port> <filename>')
+        sys.exit('Usage: python3 receiver.py <receiver port> <filename>')
 
     receiverPort = int(sys.argv[1])
     filename = sys.argv[2]
