@@ -1,7 +1,7 @@
 from enum import Enum
 
 # Classes
-class State(Enum):
+class State(Enum): # Enum States for easier, more descriptive use in Sender and Receiver
     CLOSED = 0
     LISTEN = 1
     SYN_SENT = 2
@@ -30,9 +30,9 @@ class Segment:
         if self.payload:
             self._generateChecksum()
 
-    # Sets checksum as one's complement of calculated checksum
+    # Sets checksum as one's complement of calculated checksum when called on init
     def _generateChecksum(self):
-        self.header.checksum = getChecksum(self.payload) ^ 0xffff
+        self.header.checksum = getChecksum(self.payload) ^ 0xffff # Sets one's complement
         
 # Functions
 def getChecksum(payload):

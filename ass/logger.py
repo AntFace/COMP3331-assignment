@@ -31,6 +31,9 @@ class Logger:
         self.previousACKs = set()
 
     def log(self, originalEvent, pldEvent, segment):
+        # Original events are send, timeout retransmission, fast retransmission and receive
+        # PLD events are drop, duplicate, corrupt, reorder and delay
+        # Original and PLD events handles separately to log more descriptive event and also handle corrections to final statistics
         # Generate event and calculate/correct final statistics
         sendEvents = ['snd', 'timeoutRXT', 'fastRXT']
         if originalEvent == 'snd':
@@ -38,7 +41,7 @@ class Logger:
             self.segmentsTransmitted += 1
             if segment.payload:
                 self.segmentsHandledByPLD += 1
-                self.sentFilesize += len(segment.payload)
+                self.sentFilesize += len(segment.payload) # Only add to filesize if it's an original send - RXTs don't count
         elif originalEvent == 'timeoutRXT':
             event = 'snd/RXT'
             self.segmentsTransmitted += 1
@@ -64,21 +67,21 @@ class Logger:
             if originalEvent in sendEvents:
                 self.segmentsDuplicated += 1
                 if originalEvent == 'snd':
-                    self.sentFilesize -= len(segment.payload)
+                    self.sentFilesize -= len(segment.payload) # Duplicate send needs to correct sent file size since both original send events will add to filesize but segment is discarded by receiver
                 if originalEvent == 'timeoutRXT':
                     self.timeoutRetransmissions -= 1
                 elif originalEvent == 'fastRXT':
                     self.fastRetransmissions -= 1
             else:
                 self.duplicatesReceived += 1
-                self.receivedFilesize -= len(segment.payload)
+                self.receivedFilesize -= len(segment.payload) # Duplicate receive needs to correct sent file size since original receive event will add to filesize but segment is discarded by receiver
         elif pldEvent == 'corr':
             event += '/corr'
             if originalEvent in sendEvents:
                 self.segmentsCorrupted += 1
             else:
                 self.bitErrorsReceived += 1
-                self.receivedFilesize -= len(segment.payload)
+                self.receivedFilesize -= len(segment.payload) # Corrupt receive needs to correct sent file size since original receive event will add to filesize but segment is discarded by receiver
         elif pldEvent == 'rord':
             event += '/rord'
             self.segmentsReordered += 1
@@ -99,11 +102,11 @@ class Logger:
             packetType = 'S'
         elif segment.header.ack:
             packetType = 'A'
-            if segment.header.ackNum in self.previousACKs:
+            if segment.header.ackNum in self.previousACKs: # If ACK num has already been received, mark it as duplicate ACK
                 self.duplicateACKs += 1
                 event += '/DA'
             else:
-                self.previousACKs.add(segment.header.ackNum)
+                self.previousACKs.add(segment.header.ackNum) # Otherwise, add ACK num to set of received ACK nums
         elif segment.header.fin:
             packetType = 'F'
         else:
@@ -124,14 +127,14 @@ class Logger:
         # Generate log string
         logString = '{0:<20} {1:>10.2f} {2:^10} {3:>10} {4:>10} {5:>10}\n'.format(event, logTime, packetType, seqNum, payloadLength, ackNum)
 
-        if seqNum == 0 and ackNum == 0:
+        if seqNum == 0 and ackNum == 0: # If first log write to file, else append to existing one
             with open(self.filename, 'w') as f:
                 return f.write(logString)
         else:
             with open(self.filename, 'a') as f:
                 return f.write(logString)
 
-    def logFinal(self, sender=True):
+    def logFinal(self, sender=True): # Logs final statistics
         if sender:
             final = '{0:<50} {1:>10}\n'.format('Size of the File (in Bytes)', self.sentFilesize)
             final += '{0:<50} {1:>10}\n'.format('Segments Transmitted (including drop & RXT)', self.segmentsTransmitted)
