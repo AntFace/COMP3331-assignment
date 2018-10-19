@@ -22,7 +22,7 @@ class Timer:
         self.maxRTO = 60
 
     @property
-    def timedOut(self): # Checks if timer has timed out
+    def isTimedOut(self): # Checks if timer has timed out
         return time.time() - self.lastSentTime >= self.RTO
 
     @property

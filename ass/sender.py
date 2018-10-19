@@ -81,7 +81,7 @@ class Sender:
                 try:
                     response = self._receive()
                 except socket.timeout: # If no ACK received, check Timer module's timeout
-                    if self.timer.timedOut: # If timed out, timeout retransmission of lowest un-ACKed segment
+                    if self.timer.isTimedOut: # If timed out, timeout retransmission of lowest un-ACKed segment
                         print('Timed out!')
                         header = Header(seqNum=self.seqNum, ackNum=self.ackNum)
                         payload = self.payloads[self.seqNum - initialSeqNum]
