@@ -84,7 +84,7 @@ class Sender:
                 else:
                     responseHeader = response.header
                     print('Received response. ACK num: {}'.format(responseHeader.ackNum))
-                    if responseHeader.ackNum > self.seqNum:
+                    if responseHeader.ack and responseHeader.ackNum > self.seqNum:
                         duplicateACK = 0
                         self.seqNum = responseHeader.ackNum
                         self.timer.update(self.seqNum)
