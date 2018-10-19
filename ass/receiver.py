@@ -116,11 +116,11 @@ class Receiver:
             self.logger.log(originalEvent='rcv', pldEvent='corr', segment=segment)
 
             return None # Discards segment
-        if segment.header.seqNum < self.ackNum or segment.header.seqNum in self.buffer: # If received seqNum is less than ackNum, segment is duplicate - Log and discard
-            print('Duplicate received. Discarded!')
+        if segment.header.seqNum < self.ackNum or segment.header.seqNum in self.buffer: # If received seqNum is less than ackNum or already in the buffer, segment is duplicate - Log and let receiveFile() send a dup ACK
+            print('Duplicate received!')
             self.logger.log(originalEvent='rcv', pldEvent='dup', segment=segment)
 
-            return None # Discards segment
+            return (segment, address)
 
         self.logger.log(originalEvent='rcv', pldEvent=None, segment=segment) # Log properly received segment
 
